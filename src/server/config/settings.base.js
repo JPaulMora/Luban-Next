@@ -9,6 +9,15 @@ const secret = pkg.version;
 
 const getUserHome = () => ((process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME']) || '');
 
+// Unbundled files in this folder live in server/config. The production
+// webpack bundle reports __dirname as server/, next to i18n/ and views/.
+export function resolveServerPath(...segments) {
+    const serverRoot = path.basename(__dirname) === 'server'
+        ? __dirname
+        : path.resolve(__dirname, '..');
+    return path.resolve(serverRoot, ...segments);
+}
+
 export default {
     rcfile: path.resolve(getUserHome(), RCFILE),
     verbosity: 0,
@@ -187,10 +196,10 @@ export default {
 
         backend: {
             // path where resources get loaded from
-            loadPath: path.resolve(__dirname, '..', 'i18n', '{{lng}}', '{{ns}}.json'),
+            loadPath: resolveServerPath('i18n', '{{lng}}', '{{ns}}.json'),
 
             // path to post missing resources
-            addPath: path.resolve(__dirname, '..', 'i18n', '{{lng}}', '{{ns}}.savedMissing.json'),
+            addPath: resolveServerPath('i18n', '{{lng}}', '{{ns}}.savedMissing.json'),
 
             // jsonIndent to use when storing json files
             jsonIndent: 4

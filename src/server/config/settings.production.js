@@ -1,6 +1,6 @@
 import os from 'os';
-import path from 'path';
 import urljoin from '../lib/urljoin';
+import { resolveServerPath } from './settings.base';
 
 const publicPath = global.PUBLIC_PATH || ''; // see gulp/task/server.js
 const maxAge = (365 * 24 * 60 * 60 * 1000); // one year
@@ -16,7 +16,7 @@ export default {
                 '/', // fallback
                 '/worker',
             ],
-            path: path.resolve(__dirname, '..', '..', 'app'),
+            path: resolveServerPath('..', 'app'),
             maxAge: maxAge
         }
     },
