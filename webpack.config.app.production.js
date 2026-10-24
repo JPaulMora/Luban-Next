@@ -1,7 +1,6 @@
 /* eslint no-var: 0 */
 /* eslint prefer-arrow-callback: 0 */
 const without = require('lodash/without');
-// const crypto = require('crypto');
 const path = require('path');
 const findImports = require('find-imports');
 const webpack = require('webpack');
@@ -10,27 +9,32 @@ const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const nib = require('nib');
-const stylusLoader = require('stylus-loader');
 
 const babelConfig = require('./babel.config');
 const languages = require('./webpack.config.app-i18n').languages;
-// const pkg = require('./package.json');
 
-// Use publicPath for production
-// const publicPath = (function calculatePublicPath(payload) {
-//     const algorithm = 'sha1';
-//     const buf = String(payload);
-//     const hash = crypto.createHash(algorithm).update(buf).digest('hex');
-//     return `/${hash.substr(0, 8)}/`; // 8 digits
-// }(pkg.version));
 const publicPath = './';
 const timestamp = new Date().getTime();
 
+const workerEntries = [
+    'Pool.worker',
+    'clipperPool.worker',
+    'ClippingPoolManager.worker',
+];
+
+const isWorkerChunk = (name) => name && String(name).endsWith('.worker');
+
+const stylusLoaderOptions = {
+    stylusOptions: {
+        use: [nib()],
+        import: [require.resolve('nib/lib/nib/index.styl')],
+    },
+};
+
 module.exports = {
     mode: 'production',
-    target: 'web',
+    target: 'electron-renderer',
     cache: true,
-    // devtool: 'source-map', // used in pre-production, comment this on production
     context: path.resolve(__dirname, 'src/app'),
     resolve: {
         modules: [
@@ -39,7 +43,12 @@ module.exports = {
             path.resolve(__dirname, 'src/app'),
             'node_modules'
         ],
-        extensions: ['.js', '.json', '.jsx', '.styl', '.ts', '.tsx']
+        extensions: ['.js', '.json', '.jsx', '.styl', '.ts', '.tsx'],
+        fallback: {
+            fs: false,
+            net: false,
+            tls: false,
+        },
     },
     entry: {
         polyfill: path.resolve(__dirname, 'src/app/polyfill/index.js'),
@@ -48,32 +57,36 @@ module.exports = {
             '!src/app/polyfill/**/*.js',
             '!src/app/**/*.development.js'
         ], { flatten: true }),
-        app: path.resolve(__dirname, 'src/app/index.jsx')
+        app: path.resolve(__dirname, 'src/app/index.jsx'),
+        'Pool.worker': path.resolve(__dirname, 'src/app/lib/manager/Pool.worker.js'),
+        'clipperPool.worker': path.resolve(__dirname, 'src/app/lib/manager/clipperPool.worker.js'),
+        'ClippingPoolManager.worker': path.resolve(__dirname, 'src/app/lib/manager/ClippingPoolManager.worker.ts'),
     },
     output: {
         path: path.resolve(__dirname, 'dist/Luban/src/app'),
         chunkFilename: `[name].[chunkhash].bundle.js?_=${timestamp}`,
-        filename: `[name].[chunkhash].bundle.js?_=${timestamp}`,
+        filename: (pathData) => {
+            if (isWorkerChunk(pathData.chunk.name)) {
+                return '[name].js';
+            }
+            return `[name].[chunkhash].bundle.js?_=${timestamp}`;
+        },
         publicPath: publicPath,
     },
     optimization: {
         minimize: true,
         minimizer: [new TerserPlugin()],
+        splitChunks: {
+            chunks(chunk) {
+                return !isWorkerChunk(chunk.name);
+            },
+        },
     },
     plugins: [
-        new stylusLoader.OptionsPlugin({
-            default: {
-                // nib - CSS3 extensions for Stylus
-                use: [nib()],
-                // no need to have a '@import "nib"' in the stylesheet
-                import: ['~nib/lib/nib/index.styl']
-            }
-        }),
         new webpack.ContextReplacementPlugin(
             /moment[/\\]locale$/,
             new RegExp(`^\\./(${without(languages, 'en').join('|')})$`)
         ),
-        // Generates a manifest.json file in your root output directory with a mapping of all source file names to their corresponding output file.
         new WebpackManifestPlugin({
             fileName: 'manifest.json'
         }),
@@ -84,33 +97,11 @@ module.exports = {
         new HtmlWebpackPlugin({
             filename: 'index.html',
             template: path.resolve(__dirname, 'src/app/resources/assets/index.html'),
+            excludeChunks: workerEntries,
         })
     ],
     module: {
         rules: [
-            // ESLint
-            {
-                enforce: 'pre',
-                test: /\.(jsx?|tsx?)$/,
-                loader: 'eslint-loader',
-                exclude: /node_modules/,
-                options: {
-                    cache: false,
-                    fix: true,
-                    emitWarning: false,
-                    quiet: true,
-                    configFile: path.resolve(__dirname, '.eslintrc.js'),
-                },
-            },
-            // workers
-            {
-                test: /\.worker\.(js|ts)$/,
-                loader: 'worker-loader',
-                options: {
-                    filename: '[name].js',
-                },
-            },
-            // TypeScript/TSX
             {
                 test: /\.tsx?$/,
                 use: [
@@ -134,14 +125,12 @@ module.exports = {
                     },
                 ]
             },
-            // JavaScript/JSX
             {
                 test: /\.jsx?$/,
                 exclude: /node_modules/,
                 loader: 'babel-loader',
                 options: babelConfig,
             },
-            // global styles
             {
                 test: /\.styl$/,
                 use: [
@@ -157,17 +146,18 @@ module.exports = {
                             esModule: false,
                         }
                     },
-                    'stylus-loader',
+                    {
+                        loader: 'stylus-loader',
+                        options: stylusLoaderOptions,
+                    },
                 ],
                 include: [
                     path.resolve(__dirname, 'src/app/styles'),
                 ]
             },
-            // Stylus
             {
                 test: /\.styl$/,
                 use: [
-                    // 'style-loader',
                     MiniCssExtractPlugin.loader,
                     {
                         loader: 'css-loader',
@@ -181,37 +171,32 @@ module.exports = {
                             esModule: false,
                         }
                     },
-                    'stylus-loader',
+                    {
+                        loader: 'stylus-loader',
+                        options: stylusLoaderOptions,
+                    },
                 ],
                 exclude: [
                     path.resolve(__dirname, 'src/app/styles')
                 ]
             },
-            // CSS files
             {
                 test: /\.css$/,
                 use: ['style-loader', 'css-loader']
             },
-            // image files
             {
                 test: /\.(png|jpg|svg)$/,
-                loader: 'url-loader',
-                options: {
-                    limit: 8192
-                }
+                type: 'asset',
+                parser: {
+                    dataUrlCondition: {
+                        maxSize: 8192,
+                    },
+                },
             },
-            // font files
             {
                 test: /\.(ttf|woff|woff2|eot)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-                loader: 'file-loader'
+                type: 'asset/resource',
             }
         ]
     },
-    // Some libraries import Node modules but don't use them in the browser.
-    // Tell Webpack to provide empty mocks for them so importing them works.
-    node: {
-        fs: 'empty',
-        net: 'empty',
-        tls: 'empty',
-    }
 };

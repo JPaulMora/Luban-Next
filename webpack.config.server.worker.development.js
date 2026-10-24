@@ -1,7 +1,6 @@
 /* eslint no-var: 0 */
 /* eslint prefer-arrow-callback: 0 */
 const crypto = require('crypto');
-const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
 const babelConfig = require('./babel.config');
@@ -9,36 +8,27 @@ const pkg = require('./package.json');
 
 const NODE_MODULES = path.resolve(__dirname, 'node_modules');
 
-// http://jlongster.com/Backend-Apps-with-Webpack--Part-I
-const externals = {};
-fs.readdirSync(NODE_MODULES)
-    .filter((x) => {
-        return ['.bin'].indexOf(x) === -1;
-    })
-    .forEach((mod) => {
-        externals[mod] = `commonjs ${mod}`;
-    });
-externals['@snapmaker/snapmaker-lunar'] = 'commonjs @snapmaker/snapmaker-lunar';
-
-// Use publicPath for production
 const publicPath = (function calculatePublicPath(payload) {
     const algorithm = 'sha1';
     const buf = String(payload);
     const hash = crypto.createHash(algorithm).update(buf).digest('hex');
-    return `/${hash.substr(0, 8)}/`; // 8 digits
+    return `/${hash.substr(0, 8)}/`;
 }(pkg.version));
 
 module.exports = {
     mode: 'development',
     devtool: 'eval-source-map',
     target: 'node',
+    externalsPresets: { node: true },
     watch: true,
     context: path.resolve(__dirname, './src/server'),
-    entry: path.resolve(__dirname, './src/server/services/task-manager/Pool.worker.js'),
+    entry: {
+        'Pool.worker': path.resolve(__dirname, './src/server/services/task-manager/Pool.worker.js'),
+    },
     output: {
         path: path.resolve(__dirname, 'output/src/server'),
         filename: '[name].js',
-        libraryTarget: 'commonjs2'
+        library: { type: 'commonjs2' },
     },
     plugins: [
         new webpack.DefinePlugin({
@@ -49,14 +39,10 @@ module.exports = {
         rules: [
             {
                 test: /\.ts$/,
-                loader: 'ts-loader'
-            },
-            {
-                test: /\.worker\.(j|t)s$/,
-                loader: 'worker-loader',
+                loader: 'ts-loader',
                 options: {
-                    filename: '[name].js',
-                },
+                    transpileOnly: true
+                }
             },
             {
                 test: /\.jsx?$/,
@@ -66,20 +52,19 @@ module.exports = {
             }
         ]
     },
-    externals: externals,
+    externals: [
+        ({ request }, callback) => {
+            if (!request || request.startsWith('.') || path.isAbsolute(request)) {
+                callback();
+                return;
+            }
+            callback(null, `commonjs ${request}`);
+        },
+    ],
     resolve: {
         extensions: ['.js', '.json', '.jsx', '.ts']
     },
     resolveLoader: {
         modules: [NODE_MODULES]
     },
-    node: {
-        console: true,
-        global: true,
-        process: true,
-        Buffer: true,
-        __filename: true, // Use relative path
-        __dirname: true, // Use relative path
-        setImmediate: true
-    }
 };

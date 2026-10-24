@@ -1,6 +1,5 @@
 import { delay } from 'lodash';
 import { Pool, spawn, Transfer, Worker } from 'threads';
-import { PoolEventType } from 'threads/dist/master/pool-types';
 import { Box3, BufferAttribute, BufferGeometry, Line3, Matrix4, Plane, Vector3 } from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { expandBuffer, pointToBuffer } from '../buffer-utils';
@@ -328,7 +327,7 @@ const destroyPool = async (force?: boolean) => {
         clearTaskTmp();
         if (pool && (force || runningJob)) {
             const subscriber = pool.events()
-                .filter(event => event.type === PoolEventType.terminated)
+                .filter(event => event.type === 'terminated')
                 .subscribe(() => {
                     pool = null;
                     subscriber.unsubscribe();
@@ -383,7 +382,7 @@ const initPool = async () => {
                 defaultPoolSize
             );
             const subscriber = pool.events()
-                .filter(event => event.type === PoolEventType.initialized)
+                .filter(event => event.type === 'initialized')
                 .subscribe(() => {
                     resolve();
                     if (!preparingPool) {
