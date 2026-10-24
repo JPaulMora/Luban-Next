@@ -5,6 +5,17 @@ on:
         types:
             - created
     workflow_dispatch:
+        inputs:
+            target:
+                description: Which packages to build
+                required: false
+                default: all
+                type: choice
+                options:
+                    - all
+                    - windows
+                    - macos
+                    - linux
 
 permissions:
     contents: write
@@ -13,6 +24,7 @@ jobs:
 
     build-windows:
         name: Build Windows Packages
+        if: github.event_name == 'release' || github.event.inputs.target == 'all' || github.event.inputs.target == 'windows'
 
         runs-on: windows-2022
 
@@ -70,6 +82,7 @@ jobs:
 
     build-macos-x64:
         name: Build macOS x64 Packages
+        if: github.event_name == 'release' || github.event.inputs.target == 'all' || github.event.inputs.target == 'macos'
 
         runs-on: macos-15-intel
 
@@ -116,6 +129,7 @@ jobs:
 
     build-linux:
         name: Build Linux Packages
+        if: github.event_name == 'release' || github.event.inputs.target == 'all' || github.event.inputs.target == 'linux'
 
         runs-on: ubuntu-latest
 
