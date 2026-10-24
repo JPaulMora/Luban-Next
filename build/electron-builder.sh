@@ -2,7 +2,10 @@
 set -x
 
 __dirname="$(CDPATH= cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-electron_version=$(electron --version)
+electron_version="$(electron --version 2>/dev/null || true)"
+if [[ -z "$electron_version" ]]; then
+    electron_version="v$(node -p "require('electron/package.json').version")"
+fi
 
 display_usage() {
     npm run electron-builder -- --help
