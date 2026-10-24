@@ -41,7 +41,7 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, 'dist/Luban/src/server'),
         filename: '[name].js',
-        libraryTarget: 'commonjs2'
+        library: { type: 'commonjs2' },
     },
     optimization: {
         minimize: true,
@@ -80,13 +80,4 @@ module.exports = {
     resolveLoader: {
         modules: [NODE_MODULES]
     },
-    node: {
-        console: true,
-        global: true,
-        process: true,
-        Buffer: true,
-        __filename: true, // Use relative path
-        __dirname: true, // Use relative path
-        setImmediate: true
-    }
 };

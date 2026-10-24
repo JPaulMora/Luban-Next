@@ -38,7 +38,7 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, 'output/src/server'),
         filename: '[name].js',
-        libraryTarget: 'commonjs2'
+        library: { type: 'commonjs2' },
     },
     plugins: [
         new webpack.DefinePlugin({
@@ -73,13 +73,4 @@ module.exports = {
     resolveLoader: {
         modules: [NODE_MODULES]
     },
-    node: {
-        console: true,
-        global: true,
-        process: true,
-        Buffer: true,
-        __filename: true, // Use relative path
-        __dirname: true, // Use relative path
-        setImmediate: true
-    }
 };

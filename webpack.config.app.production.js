@@ -10,7 +10,6 @@ const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const nib = require('nib');
-const stylusLoader = require('stylus-loader');
 
 const babelConfig = require('./babel.config');
 const languages = require('./webpack.config.app-i18n').languages;
@@ -26,6 +25,13 @@ const languages = require('./webpack.config.app-i18n').languages;
 const publicPath = './';
 const timestamp = new Date().getTime();
 
+const stylusLoaderOptions = {
+    stylusOptions: {
+        use: [nib()],
+        import: [require.resolve('nib/lib/nib/index.styl')],
+    },
+};
+
 module.exports = {
     mode: 'production',
     target: 'web',
@@ -39,7 +45,25 @@ module.exports = {
             path.resolve(__dirname, 'src/app'),
             'node_modules'
         ],
-        extensions: ['.js', '.json', '.jsx', '.styl', '.ts', '.tsx']
+        extensions: ['.js', '.json', '.jsx', '.styl', '.ts', '.tsx'],
+        alias: {
+            'threads/dist/master/pool-types': path.resolve(
+                __dirname,
+                'node_modules/threads/dist/master/pool-types.js'
+            ),
+            // Webpack 5 exports field picks Dexie's ESM class; ts-loader
+            // emits ES5 subclasses that must call the CJS constructor.
+            dexie: path.resolve(__dirname, 'node_modules/dexie/dist/dexie.js'),
+        },
+        fallback: {
+            fs: false,
+            net: false,
+            tls: false,
+            path: require.resolve('path-browserify'),
+            stream: require.resolve('stream-browserify'),
+            events: require.resolve('events/'),
+            timers: require.resolve('timers-browserify'),
+        },
     },
     entry: {
         polyfill: path.resolve(__dirname, 'src/app/polyfill/index.js'),
@@ -61,14 +85,6 @@ module.exports = {
         minimizer: [new TerserPlugin()],
     },
     plugins: [
-        new stylusLoader.OptionsPlugin({
-            default: {
-                // nib - CSS3 extensions for Stylus
-                use: [nib()],
-                // no need to have a '@import "nib"' in the stylesheet
-                import: ['~nib/lib/nib/index.styl']
-            }
-        }),
         new webpack.ContextReplacementPlugin(
             /moment[/\\]locale$/,
             new RegExp(`^\\./(${without(languages, 'en').join('|')})$`)
@@ -88,6 +104,11 @@ module.exports = {
     ],
     module: {
         rules: [
+            // Webpack 5 treats .js as ESM when a package.json has "type": "module".
+            {
+                test: /parameter-context\.es5\.js$/,
+                type: 'javascript/auto',
+            },
             // ESLint
             {
                 enforce: 'pre',
@@ -157,7 +178,10 @@ module.exports = {
                             esModule: false,
                         }
                     },
-                    'stylus-loader',
+                    {
+                        loader: 'stylus-loader',
+                        options: stylusLoaderOptions,
+                    },
                 ],
                 include: [
                     path.resolve(__dirname, 'src/app/styles'),
@@ -181,7 +205,10 @@ module.exports = {
                             esModule: false,
                         }
                     },
-                    'stylus-loader',
+                    {
+                        loader: 'stylus-loader',
+                        options: stylusLoaderOptions,
+                    },
                 ],
                 exclude: [
                     path.resolve(__dirname, 'src/app/styles')
@@ -207,11 +234,4 @@ module.exports = {
             }
         ]
     },
-    // Some libraries import Node modules but don't use them in the browser.
-    // Tell Webpack to provide empty mocks for them so importing them works.
-    node: {
-        fs: 'empty',
-        net: 'empty',
-        tls: 'empty',
-    }
 };
