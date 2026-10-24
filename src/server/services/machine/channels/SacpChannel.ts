@@ -850,7 +850,7 @@ class SacpChannelBase extends Channel implements
             };
             this.sacpClient.ack(0x01, 0x36, packet, new Response(0).toBuffer()).then(() => {
                 if (stateData.headType !== HEAD_PRINTING) {
-                    this.sacpClient.getCurrentCoordinateInfo().then(({ response }) => {
+                    this.sacpClient.getCurrentCoordinateInfo().then(() => {
                         this.sacpClient.updateCoordinate(CoordinateType.WORKSPACE).then(({ response }) => {
                             log.info(`updateCoordinateType, ${response.result}`);
                         });
@@ -1274,7 +1274,7 @@ class SacpChannelBase extends Channel implements
     };
 
     public goHome = async (headType?: string) => {
-        log.info('onClick gohome');
+        log.info(`onClick gohome${headType ? `: ${headType}` : ''}`);
         await this.sacpClient.updateCoordinate(CoordinateType.MACHINE).then(res => {
             log.info(`Update Coordinate: ${res}`);
         });

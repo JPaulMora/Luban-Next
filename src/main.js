@@ -5,6 +5,7 @@ import 'core-js';
 // import 'regenerator-runtime/runtime';
 
 import { enable as electronEnable, initialize as electronRemoteMainInitialize } from '@electron/remote/main';
+import * as Sentry from '@sentry/electron/main';
 import { app, BrowserWindow, dialog, ipcMain, Menu, powerSaveBlocker, protocol, screen, session, shell } from 'electron';
 import Store from 'electron-store';
 import { autoUpdater } from 'electron-updater';
@@ -20,22 +21,20 @@ import MenuBuilder, { addRecentFile, cleanAllRecentFiles } from './electron-app/
 import { configureWindow } from './electron-app/window';
 import pkg from './package.json';
 
-import * as Sentry from "@sentry/electron/main";
-
 Sentry.init({
-  dsn: "https://cd2af28a126afbc7a8257a75b3b5d0ab@o4508125599563776.ingest.us.sentry.io/4508125605068800",
-  release: pkg.version,
-//   integrations: [new Sentry.Integrations.BrowserTracing()],
-  tracesSampleRate: 1.0,
-  debug: true,
-  beforeSend(event) {
-    log.info('Sentry event::: ', event);
-    // Log the error to the console
-    if (event.exception) {
-      console.error('Captured exception:', event.exception.values[0]);
+    dsn: 'https://cd2af28a126afbc7a8257a75b3b5d0ab@o4508125599563776.ingest.us.sentry.io/4508125605068800',
+    release: pkg.version,
+    // integrations: [new Sentry.Integrations.BrowserTracing()],
+    tracesSampleRate: 1.0,
+    debug: true,
+    beforeSend(event) {
+        log.info('Sentry event::: ', event);
+        // Log the error to the console
+        if (event.exception) {
+            console.error('Captured exception:', event.exception.values[0]);
+        }
+        return event;
     }
-    return event;
-  }
 });
 
 log.setLevel(log.levels.INFO);
@@ -350,10 +349,10 @@ const showMainWindow = async () => {
     const window = new BrowserWindow(windowOptions);
     mainWindow = window;
     // Monitor policy links, do not allow redirection
-    window.webContents.on('did-attach-webview', (e, webContent)=>  {
-        webContent.on('will-navigate', (e, url) => {
-            if (url.includes('policy')) {
-                e.preventDefault();
+    window.webContents.on('did-attach-webview', (event, webContent) => {
+        webContent.on('will-navigate', (navEvent, targetUrl) => {
+            if (targetUrl.includes('policy')) {
+                navEvent.preventDefault();
             }
         });
     });

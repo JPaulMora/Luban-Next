@@ -88,7 +88,6 @@ const _getResult = (err, res: request.Response): Result => {
     };
 };
 // let timeoutHandle = null;
-const intervalHandle = null;
 
 
 export type StateOptions = {

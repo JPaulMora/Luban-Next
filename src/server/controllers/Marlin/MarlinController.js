@@ -503,7 +503,7 @@ class MarlinController extends EventEmitter {
                 this.writeln('M1010 S2');
             }, 1000);
         });
-        this.controller.on('cnc:highpower', (res) => {
+        this.controller.on('cnc:highpower', () => {
             // log.info(`controller.on('cnc:highpower'): source=${this.history.writeSource}, res=${JSON.stringify(res)}`);
         });
         this.controller.on('laser10w:state', (res) => {
