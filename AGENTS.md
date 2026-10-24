@@ -80,7 +80,7 @@ New code follows the language of the module it edits. When you rewrite a `.js` m
 As of 2026-10-24:
 
 - Fork remote is `git@github.com:JPaulMora/Luban-Next.git`, branch `main`, version `4.15.2`. History matches upstream through `db573f5df` (`Feature: Update Chinese i18n`). First fork-only commits are the agent instruction files and the Python 3.12+ native rebuild wrapper. No open issues on the fork.
-- Stack: Electron 15.5.7, React 17.0.2, Redux 4, Ant Design 4.24, Three 0.124, TypeScript 4.4.4, Webpack 5.112, Gulp 4, Socket.IO 4.5, Stylus. Renderer workers (`Pool.worker`, `clipperPool.worker`, `ClippingPoolManager.worker`) are webpack entries. The renderer still uses `file-loader` and `url-loader`, and runs with `nodeIntegration` and remote enabled.
+- Stack: Electron 15.5.7, React 17.0.2, Redux 4, Ant Design 4.24, Three 0.124, TypeScript 4.4.4, Webpack 5.112, Gulp 4, Socket.IO 4.5, Stylus. Renderer workers (`Pool.worker`, `clipperPool.worker`, `ClippingPoolManager.worker`) are webpack entries. Images and fonts use webpack asset modules. The renderer still runs with `nodeIntegration` and remote enabled.
 - About 313 `.js`, 224 `.jsx`, 252 `.ts`, 148 `.tsx`, and 118 `.styl` files under `src` and `packages`. Machine channels and several Redux slices are large and carry hardcoded per-machine branches.
 - Tape covers Marlin replies, the serial sender, and a few utilities. `gcodeParser.js` has no direct tests.
 - Submodules are uninitialized until `git submodule update --init`. `docs/Development.md` has no macOS section. Husky hooks (`commit-msg` commitlint, `pre-push` eslint) activate at `npm install`. Native rebuild (`npm run electron-rebuild`) uses `build/electron-rebuild.sh` and a local Python venv so node-gyp 9 can run on Python 3.12+.
@@ -93,7 +93,7 @@ Standing rules above are permanent. This list is the backlog. Add an item when y
 1. Cover `src/shared/lib/gcodeParser.js` and `parseGcodeHeader.js` with tape tests before changing parse results.
 2. Collapse hardcoded branches in `ConnectionManager`, `SacpChannel`, and the machine instances. Bytes on the wire stay the same.
 3. Replace mixed JS/TS one module at a time. The replacement lands with the caller updates; the old file goes away in that commit.
-4. Finish the Webpack 5 asset-module slice and React 18. Then plan Electron 15 and the renderer’s Node integration as their own sequences. Each upgrade is a sequence of small commits with a stated behavior check.
+4. Land React 18 (`createRoot` only). Then plan Electron 15 and the renderer’s Node integration as their own sequences. Each upgrade is a sequence of small commits with a stated behavior check.
 5. Point `README.md` and `docs/Development.md` at this fork and add the macOS dev path. The next edit of those files should do it.
 6. Extend tests for any standard boundary you touch (Marlin, G-code emit, SVG/DXF/STL). `npm test` only loads `test/*.js`.
 

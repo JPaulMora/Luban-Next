@@ -247,15 +247,17 @@ module.exports = {
             // image files
             {
                 test: /\.(png|jpg|svg)$/,
-                loader: 'url-loader',
-                options: {
-                    limit: 8192
-                }
+                type: 'asset',
+                parser: {
+                    dataUrlCondition: {
+                        maxSize: 8192,
+                    },
+                },
             },
             // font files
             {
                 test: /\.(ttf|woff|woff2|eot)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-                loader: 'file-loader'
+                type: 'asset/resource',
             },
         ]
     },
