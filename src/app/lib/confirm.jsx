@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import Confirm from '../ui/components/Confirm';
 import i18n from './i18n';
 
@@ -15,7 +15,10 @@ class ConfirmHOC extends PureComponent {
 
     removeContainer() {
         const { container } = this.props;
-        ReactDOM.unmountComponentAtNode(container);
+        if (container._reactRoot) {
+            container._reactRoot.unmount();
+            container._reactRoot = null;
+        }
         container.remove();
     }
 
@@ -67,5 +70,7 @@ export default (options) => new Promise((resolve) => {
         container: container
     };
 
-    ReactDOM.render(<ConfirmHOC {...props} />, container);
+    const root = createRoot(container);
+    container._reactRoot = root;
+    root.render(<ConfirmHOC {...props} />);
 });

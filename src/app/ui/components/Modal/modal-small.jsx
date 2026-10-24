@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React, { PureComponent } from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import i18n from '../../../lib/i18n';
 import { Button } from '../Buttons';
 import SvgIcon from '../SvgIcon';
@@ -50,7 +50,10 @@ export class ModalSmallHOC extends PureComponent {
         const { container } = this.props;
 
         if (container) {
-            ReactDOM.unmountComponentAtNode(container);
+            if (container._reactRoot) {
+                container._reactRoot.unmount();
+                container._reactRoot = null;
+            }
             container.remove();
         }
     }
@@ -139,7 +142,9 @@ export default (options) => {
         // },
         container: container
     };
-    ReactDOM.render(<ModalSmallHOC ref={ref} {...props} />, container);
+    const root = createRoot(container);
+    container._reactRoot = root;
+    root.render(<ModalSmallHOC ref={ref} {...props} />);
 
     return {
         ref: ref
