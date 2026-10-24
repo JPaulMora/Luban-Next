@@ -2,7 +2,7 @@
 // import pick from 'lodash/pick';
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import i18n from './i18n';
 import Modal from '../ui/components/Modal';
 
@@ -10,6 +10,7 @@ class WarningModalHOC extends PureComponent {
     static propTypes = {
         ...Modal.propTypes,
         container: PropTypes.object,
+        root: PropTypes.object,
         title: PropTypes.node,
         body: PropTypes.node,
         insideHideModal: PropTypes.func.isRequired,
@@ -44,8 +45,8 @@ class WarningModalHOC extends PureComponent {
     };
 
     removeContainer() {
-        const { container } = this.props;
-        ReactDOM.unmountComponentAtNode(container);
+        const { container, root } = this.props;
+        root.unmount();
         container.remove();
     }
 
@@ -98,13 +99,15 @@ export default (options) => new Promise((resolve) => {
     const container = document.createElement('div');
     document.body.appendChild(container);
 
+    const root = createRoot(container);
     const props = {
         ...options,
         onClose: () => {
             resolve();
         },
-        container: container
+        container: container,
+        root: root
     };
 
-    ReactDOM.render(<WarningModalHOC {...props} />, container);
+    root.render(<WarningModalHOC {...props} />);
 });

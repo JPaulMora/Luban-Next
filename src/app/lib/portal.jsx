@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 
 export default (Component, node = null) => new Promise((resolve) => {
     let defaultNode = null;
@@ -10,14 +10,15 @@ export default (Component, node = null) => new Promise((resolve) => {
         document && document.body && document.body.appendChild(defaultNode);
     }
 
-    ReactDOM.render(
+    const target = node || defaultNode;
+    const root = createRoot(target);
+
+    root.render(
         <Component
             onClose={() => {
                 setTimeout(() => {
-                    if (node) {
-                        ReactDOM.unmountComponentAtNode(node);
-                    } else if (defaultNode) {
-                        ReactDOM.unmountComponentAtNode(defaultNode);
+                    root.unmount();
+                    if (!node && defaultNode) {
                         document && document.body && document.body.removeChild(defaultNode);
                         defaultNode = null;
                     }
@@ -25,7 +26,6 @@ export default (Component, node = null) => new Promise((resolve) => {
                     resolve();
                 }, 0);
             }}
-        />,
-        node || defaultNode
+        />
     );
 });

@@ -5,7 +5,7 @@ import i18next from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import i18nHttpApi from 'i18next-http-backend';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { initReactI18next } from 'react-i18next';
 import { Provider } from 'react-redux';
 
@@ -105,12 +105,12 @@ series([
     const userId = machineStore.get('userId');
     initialize(userId);
 
-    ReactDOM.render(
+    const root = createRoot(container);
+    root.render(
         <ConfigProvider autoInsertSpaceInButton={false}>
             <Provider store={reduxStore}>
                 <App />
             </Provider>
-        </ConfigProvider>,
-        container
+        </ConfigProvider>
     );
 });

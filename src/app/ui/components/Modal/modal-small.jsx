@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React, { PureComponent } from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import i18n from '../../../lib/i18n';
 import { Button } from '../Buttons';
 import SvgIcon from '../SvgIcon';
@@ -11,6 +11,7 @@ export class ModalSmallHOC extends PureComponent {
     static propTypes = {
         ...Modal.propTypes,
         container: PropTypes.object,
+        root: PropTypes.object,
         showCloseButton: PropTypes.bool,
         img: PropTypes.string,
         iconColor: PropTypes.string,
@@ -50,7 +51,7 @@ export class ModalSmallHOC extends PureComponent {
         const { container } = this.props;
 
         if (container) {
-            ReactDOM.unmountComponentAtNode(container);
+            this.props.root.unmount();
             container.remove();
         }
     }
@@ -132,14 +133,16 @@ export default (options) => {
     const container = document.createElement('div');
     document.body.appendChild(container);
 
+    const root = createRoot(container);
     const props = {
         ...options,
         // onClose: () => {
         //     resolve();
         // },
-        container: container
+        container: container,
+        root: root
     };
-    ReactDOM.render(<ModalSmallHOC ref={ref} {...props} />, container);
+    root.render(<ModalSmallHOC ref={ref} {...props} />);
 
     return {
         ref: ref

@@ -2,7 +2,7 @@
 // import pick from 'lodash/pick';
 import React, { PureComponent, useState } from 'react';
 import PropTypes from 'prop-types';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import i18n from './i18n';
 import Modal from '../ui/components/Modal';
 import { Button } from '../ui/components/Buttons';
@@ -179,8 +179,9 @@ export class ModalHOC extends PureComponent {
 export default (options) => {
     const container = document.createElement('div');
     document.body.appendChild(container);
+    const root = createRoot(container);
     const removeContainer = () => {
-        ReactDOM.unmountComponentAtNode(container);
+        root.unmount();
         container.remove();
     };
     const getInputValue = () => {
@@ -192,7 +193,7 @@ export default (options) => {
         removeContainer: removeContainer
     };
 
-    ReactDOM.render(<ModalHOC {...props} />, container);
+    root.render(<ModalHOC {...props} />);
     // return popupActions
     return { close: removeContainer, getInputValue: getInputValue };
 };

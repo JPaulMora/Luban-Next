@@ -1,12 +1,13 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import Confirm from '../ui/components/Confirm';
 import i18n from './i18n';
 
 class ConfirmHOC extends PureComponent {
     static propTypes = {
         container: PropTypes.object,
+        root: PropTypes.object,
         onConfirm: PropTypes.func,
         onCancel: PropTypes.func,
         btnConfirm: Confirm.propTypes.btnConfirm,
@@ -14,8 +15,8 @@ class ConfirmHOC extends PureComponent {
     };
 
     removeContainer() {
-        const { container } = this.props;
-        ReactDOM.unmountComponentAtNode(container);
+        const { container, root } = this.props;
+        root.unmount();
         container.remove();
     }
 
@@ -55,6 +56,7 @@ class ConfirmHOC extends PureComponent {
 export default (options) => new Promise((resolve) => {
     const container = document.createElement('div');
     document.body.appendChild(container);
+    const root = createRoot(container);
 
     const props = {
         ...options,
@@ -64,8 +66,9 @@ export default (options) => new Promise((resolve) => {
         onCancel: () => {
             resolve(false);
         },
-        container: container
+        container: container,
+        root: root
     };
 
-    ReactDOM.render(<ConfirmHOC {...props} />, container);
+    root.render(<ConfirmHOC {...props} />);
 });
