@@ -8,6 +8,7 @@ npm-debug.log*
 /coverage
 /dist
 /output
+/packages/luban-platform/dist
 /releases
 
 # local files

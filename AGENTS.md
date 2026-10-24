@@ -84,6 +84,7 @@ As of 2026-10-24:
 - About 313 `.js`, 224 `.jsx`, 252 `.ts`, 148 `.tsx`, and 118 `.styl` files under `src` and `packages`. Machine channels and several Redux slices are large and carry hardcoded per-machine branches.
 - Tape covers Marlin replies, the serial sender, and a few utilities. `gcodeParser.js` has no direct tests.
 - Submodules are uninitialized until `git submodule update --init`. `docs/Development.md` has no macOS section. Husky hooks (`commit-msg` commitlint, `pre-push` eslint) activate at `npm install`. Native rebuild (`npm run electron-rebuild`) uses `build/electron-rebuild.sh` and a local Python venv so node-gyp 9 can run on Python 3.12+. Packaging (`build/electron-builder.sh`) installs the packaged app with `--ignore-scripts` and then rebuilds `font-scanner` and `serialport` the same way. `electron-builder.yml` sets `npmRebuild: false` so electron-builder does not rebuild natives again with the system Python.
+- `@snapmaker/luban-platform` is TypeScript. The server webpack configs compile it into the server bundle. Node `require()` uses the CommonJS emit in `packages/luban-platform/dist`, produced by `npm run build:platform` (also the first step of `build:server`).
 - Agent instructions are this file, `CLAUDE.md`, and `.github/copilot-instructions.md`.
 
 ## Goals and pending updates

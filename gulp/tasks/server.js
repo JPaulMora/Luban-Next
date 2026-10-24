@@ -35,7 +35,11 @@ export function serverStartDevelopment(cb) {
         script: './output/src/main',
         // script: './bin/cli',
         args: args,
-        ignore: ['.git', 'node_modules/**/node_modules'],
+        ignore: [
+            '.git',
+            'node_modules/**/node_modules',
+            'packages/luban-platform/dist',
+        ],
         delay: 8000,
         verbose: true,
         exec: 'electron --inspect --trace-warnings',

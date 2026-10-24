@@ -4,6 +4,14 @@
   "description": "Defines basic services and libraries for Luban that are shared across frontend/backend.",
   "type": "module",
   "main": "index.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": "./index.ts",
+      "require": "./dist/index.js",
+      "default": "./index.ts"
+    }
+  },
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

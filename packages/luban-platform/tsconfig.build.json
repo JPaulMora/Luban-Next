@@ -1,0 +1,20 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "module": "commonjs",
+        "outDir": "dist",
+        "rootDir": ".",
+        "sourceMap": false,
+        "declaration": false,
+        "noEmit": false
+    },
+    "include": [
+        "index.ts",
+        "src/**/*.ts",
+        "src/**/*.js"
+    ],
+    "exclude": [
+        "dist",
+        "src/machine-state/index.ts"
+    ]
+}

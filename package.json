@@ -59,8 +59,10 @@
     "coveralls": "tape -r @@babel/register test/*.js --coverage --coverage-report=text-lcov --nyc-arg=--require --nyc-arg=babel-register --nyc-arg=--require --nyc-arg=babel-polyfill | coveralls",
     "serve": "npx webpack serve --config webpack.config.app.development.js --progress",
     "watch:server-worker": "webpack --config webpack.config.server.worker.development.js",
-    "watch:server": "tsc -p ./tsconfig-server.json --watch",
-    "build:server": "tsc -p ./tsconfig-server.json",
+    "build:platform": "node build/build-luban-platform.js",
+    "watch:platform": "node build/build-luban-platform.js --watch",
+    "watch:server": "concurrently --kill-others --raw \"npm run watch:platform\" \"tsc -p ./tsconfig-server.json --watch\"",
+    "build:server": "npm run build:platform && tsc -p ./tsconfig-server.json",
     "build:main": "cross-env NODE_ENV=production babel \"./src/*.js\" --config-file ./babel.config.js -d ./output/",
     "build:app": "webpack --config webpack.config.app.production.js"
   },
