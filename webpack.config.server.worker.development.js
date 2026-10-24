@@ -9,10 +9,15 @@ const pkg = require('./package.json');
 const NODE_MODULES = path.resolve(__dirname, 'node_modules');
 
 const nodeExternals = ({ request }, callback) => {
+    // TypeScript source. Node loads package "main" (index.ts) as CJS and
+    // throws on the import statement. Compile it into this bundle instead.
+    if (request === '@snapmaker/luban-platform') {
+        return callback();
+    }
     if (request && !request.startsWith('.') && !path.isAbsolute(request)) {
         return callback(null, `commonjs ${request}`);
     }
-    callback();
+    return callback();
 };
 
 // Use publicPath for production
@@ -44,6 +49,11 @@ module.exports = {
     ],
     module: {
         rules: [
+            // Webpack 5 treats .js as ESM when package.json has "type": "module".
+            {
+                test: /parameter-context\.es5\.js$/,
+                type: 'javascript/auto',
+            },
             {
                 test: /\.ts$/,
                 loader: 'ts-loader',
@@ -61,7 +71,13 @@ module.exports = {
     },
     externals: [nodeExternals],
     resolve: {
-        extensions: ['.js', '.json', '.jsx', '.ts']
+        extensions: ['.js', '.json', '.jsx', '.ts'],
+        alias: {
+            '@snapmaker/luban-platform': path.resolve(
+                __dirname,
+                'packages/luban-platform/index.ts'
+            ),
+        },
     },
     resolveLoader: {
         modules: [NODE_MODULES]
