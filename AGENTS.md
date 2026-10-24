@@ -83,7 +83,7 @@ As of 2026-10-24:
 - Stack: Electron 15.5.7, React 18.3.1, Redux 4, Ant Design 4.24, Three 0.124, TypeScript 4.4.4, Webpack 5.112, Gulp 4, Socket.IO 4.5, Stylus. Renderer workers (`Pool.worker`, `clipperPool.worker`, `ClippingPoolManager.worker`) are webpack entries. Images and fonts use webpack asset modules. The renderer still runs with `nodeIntegration` and remote enabled.
 - About 313 `.js`, 224 `.jsx`, 252 `.ts`, 148 `.tsx`, and 118 `.styl` files under `src` and `packages`. Machine channels and several Redux slices are large and carry hardcoded per-machine branches.
 - Tape covers Marlin replies, the serial sender, and a few utilities. `gcodeParser.js` has no direct tests.
-- Submodules are uninitialized until `git submodule update --init`. `docs/Development.md` has no macOS section. Husky hooks (`commit-msg` commitlint, `pre-push` eslint) activate at `npm install`. Native rebuild (`npm run electron-rebuild`) uses `build/electron-rebuild.sh` and a local Python venv so node-gyp 9 can run on Python 3.12+. Packaging (`build/electron-builder.sh`) installs the packaged app with `--ignore-scripts` and then rebuilds `font-scanner` and `serialport` the same way. `electron-builder.yml` sets `npmRebuild: false` so electron-builder does not rebuild natives again with the system Python.
+- Submodules are uninitialized until `git submodule update --init`. `README.md` and `docs/Development.md` point at this fork, including the macOS dev path and the 4.16.0 home-screen startup time (about 4 s, versus about 24 s for installed 4.15.0). Husky hooks (`commit-msg` commitlint, `pre-push` eslint) activate at `npm install`. Native rebuild (`npm run electron-rebuild`) uses `build/electron-rebuild.sh` and a local Python venv so node-gyp 9 can run on Python 3.12+. Packaging (`build/electron-builder.sh`) installs the packaged app with `--ignore-scripts` and then rebuilds `font-scanner` and `serialport` the same way. `electron-builder.yml` sets `npmRebuild: false` so electron-builder does not rebuild natives again with the system Python.
 - `@snapmaker/luban-platform` is TypeScript. The server webpack configs compile it into the server bundle. Node `require()` uses the CommonJS emit in `packages/luban-platform/dist`, produced by `npm run build:platform` (also the first step of `build:server`).
 - Agent instructions are this file, `CLAUDE.md`, and `.github/copilot-instructions.md`.
 
@@ -95,8 +95,7 @@ Standing rules above are permanent. This list is the backlog. Add an item when y
 2. Collapse hardcoded branches in `ConnectionManager`, `SacpChannel`, and the machine instances. Bytes on the wire stay the same.
 3. Replace mixed JS/TS one module at a time. The replacement lands with the caller updates; the old file goes away in that commit.
 4. Plan remaining framework upgrades as their own slices: Electron 15 and the renderer’s Node integration. Each upgrade is a sequence of small commits with a stated behavior check.
-5. Point `README.md` and `docs/Development.md` at this fork and add the macOS dev path. The next edit of those files should do it.
-6. Extend tests for any standard boundary you touch (Marlin, G-code emit, SVG/DXF/STL). `npm test` only loads `test/*.js`.
+5. Extend tests for any standard boundary you touch (Marlin, G-code emit, SVG/DXF/STL). `npm test` only loads `test/*.js`.
 
 ## Keeping this file true
 

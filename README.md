@@ -12,6 +12,21 @@ Our goal is to provide a multi-functional 3D software, while making it as access
 The software is inspired by [cncjs](https://github.com/cncjs/cncjs) by cheton.
 We use [LunarSlicer](https://github.com/Snapmaker/LunarSlicer) for 3D slicing.
 
+This repository is [Luban-Next](https://github.com/JPaulMora/Luban-Next), a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban). The current version is 4.16.0.
+
+## Startup
+
+4.16.0 reaches the home screen much faster than 4.15.0.
+
+On one Mac, timed on 24 October 2026, the clock ran from process start until the home screen showed Get Started:
+
+| Version | Where it ran | Time |
+| --- | --- | --- |
+| 4.15.0 | `/Applications/Snapmaker Luban.app` | 24.1 s |
+| 4.16.0 | Luban-Next macOS arm64 build | 4.1 s |
+
+That is the same gap as a separate check of about 25 seconds versus about 5 seconds. 4.16.0 is about six times faster to the home screen.
+
 ![Software Screenshot](https://user-images.githubusercontent.com/3749551/219274513-0f0d1e56-2e0a-4c9b-ad8b-7b5801a00cde.jpg)
 
 

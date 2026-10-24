@@ -4,7 +4,7 @@ If you want to contribute to Luban, you will need to have `Node.js` development 
 
 Or you can follow the instructions below to set up the development environment for specific platform:
 
-- macOS: (No documentation for now)
+- macOS: Node.js 16 or newer. Apple Silicon packages with `npm run build:mac-arm64`. Native modules rebuild through `build/electron-rebuild.sh`, which uses a local Python virtualenv so node-gyp can run on Python 3.12+.
 - Linux (Ubuntu/Debian/CentOS): [Linux Environment](Environment-Linux.md)
 - Windows: [Windows Environment](Environment-Windows.md)
 
@@ -14,8 +14,8 @@ Or you can follow the instructions below to set up the development environment f
 - Clone this repository and initialize submodules. **Note: As we use submodules to manage large resources, it's always recommended to use [SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) to manage your repository.**
 
     ```Bash
-    > git clone git@github.com:Snapmaker/Luban.git
-    > cd Luban
+    > git clone git@github.com:JPaulMora/Luban-Next.git
+    > cd Luban-Next
     > git submodule update --init
     ```
 
@@ -34,7 +34,8 @@ Or you can follow the instructions below to set up the development environment f
 ### Build installer locally
 
 ```Bash
-> npm run build && npm run build:mac-x64 (for macOS)
+> npm run build && npm run build:mac-arm64 (Apple Silicon)
+> npm run build && npm run build:mac-x64 (Intel Mac)
 > npm run build && npm run build:win-x64 (for Windows)
 ```
 
