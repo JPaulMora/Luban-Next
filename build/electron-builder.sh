@@ -22,8 +22,11 @@ pushd "$__dirname/../dist/Luban"
 echo "Cleaning up \"`pwd`/node_modules\""
 rm -rf node_modules
 echo "Installing packages..."
-npm install --omit=dev
-npm dedupe
+# Native addons are rebuilt below with electron-rebuild.sh, which uses
+# a Python 3.12+ venv. Skip lifecycle scripts so node-gyp 9 does not
+# hit the system Python (no distutils).
+npm install --omit=dev --ignore-scripts
+npm dedupe --ignore-scripts
 popd
 
 echo "Rebuild native modules using electron ${electron_version}"
