@@ -1,7 +1,6 @@
 /* eslint no-var: 0 */
 /* eslint prefer-arrow-callback: 0 */
 const crypto = require('crypto');
-const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
 const babelConfig = require('./babel.config');
@@ -9,16 +8,12 @@ const pkg = require('./package.json');
 
 const NODE_MODULES = path.resolve(__dirname, 'node_modules');
 
-// http://jlongster.com/Backend-Apps-with-Webpack--Part-I
-const externals = {};
-fs.readdirSync(NODE_MODULES)
-    .filter((x) => {
-        return ['.bin'].indexOf(x) === -1;
-    })
-    .forEach((mod) => {
-        externals[mod] = `commonjs ${mod}`;
-    });
-externals['@snapmaker/snapmaker-lunar'] = 'commonjs @snapmaker/snapmaker-lunar';
+const nodeExternals = ({ request }, callback) => {
+    if (request && !request.startsWith('.') && !path.isAbsolute(request)) {
+        return callback(null, `commonjs ${request}`);
+    }
+    callback();
+};
 
 // Use publicPath for production
 const publicPath = (function calculatePublicPath(payload) {
@@ -34,7 +29,9 @@ module.exports = {
     target: 'node',
     watch: true,
     context: path.resolve(__dirname, './src/server'),
-    entry: path.resolve(__dirname, './src/server/services/task-manager/Pool.worker.js'),
+    entry: {
+        'Pool.worker': path.resolve(__dirname, './src/server/services/task-manager/Pool.worker.js'),
+    },
     output: {
         path: path.resolve(__dirname, 'output/src/server'),
         filename: '[name].js',
@@ -49,13 +46,9 @@ module.exports = {
         rules: [
             {
                 test: /\.ts$/,
-                loader: 'ts-loader'
-            },
-            {
-                test: /\.worker\.(j|t)s$/,
-                loader: 'worker-loader',
+                loader: 'ts-loader',
                 options: {
-                    filename: '[name].js',
+                    transpileOnly: true,
                 },
             },
             {
@@ -66,7 +59,7 @@ module.exports = {
             }
         ]
     },
-    externals: externals,
+    externals: [nodeExternals],
     resolve: {
         extensions: ['.js', '.json', '.jsx', '.ts']
     },

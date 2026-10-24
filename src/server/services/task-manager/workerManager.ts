@@ -1,11 +1,6 @@
 import workerpool, { WorkerPool } from 'workerpool';
 import DataStorage from '../../DataStorage';
 
-// Avoid TSC precompiling, at the same time, webpack can collect dependencies
-if (process.env.NODE_ENV === 'production') {
-    require('./Pool.worker');
-}
-
 export enum WorkerMethods {
     // LUBAN worker methods BEGIN
     cutModel = 'cutModel',

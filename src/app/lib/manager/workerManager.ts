@@ -4,9 +4,7 @@ import { Pool, Thread, Worker as ThreadsWorker, spawn } from 'threads';
 
 import { machineStore } from '../../store/local-storage';
 import { LoadModelOptions } from '../../workers/loadModel';
-import CalculateSectionPoints, { IMessage as TCalculateSectionPointsMessage } from './ClippingPoolManager.worker';
-import './Pool.worker';
-import './clipperPool.worker';
+import type { IMessage as TCalculateSectionPointsMessage } from './ClippingPoolManager.worker';
 
 type TListener = [string, (res: unknown) => void]
 
@@ -19,7 +17,7 @@ export const WorkerEvents = {
 
 class WorkerManager extends EventEmitter {
     private pool: Pool<Thread>;
-    private clipperWorker: Worker;
+    private clipperWorker: globalThis.Worker;
     private listenerMap = new Map<string, TListener>();
 
     public clipperWorkerEnable = false;
@@ -130,7 +128,7 @@ class WorkerManager extends EventEmitter {
 
     public async calculateSectionPoints<T>(data: TCalculateSectionPointsMessage) {
         if (!this.clipperWorker) {
-            this.clipperWorker = new CalculateSectionPoints();
+            this.clipperWorker = new Worker('./worker/ClippingPoolManager.worker.js');
             this.clipperWorker.onmessage = (res) => {
                 // message pipeline
                 const { jobID } = res.data;

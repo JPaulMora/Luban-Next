@@ -331,7 +331,6 @@
     "webpack-hot-middleware": "2.25.4",
     "webpack-manifest-plugin": "^5.0.1",
     "word-wrap": "1.2.5",
-    "worker-loader": "3.0.8",
     "xlsx": "0.18.5"
   },
   "config": {

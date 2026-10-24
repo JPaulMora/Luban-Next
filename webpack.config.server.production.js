@@ -1,5 +1,4 @@
 const crypto = require('crypto');
-const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
@@ -8,15 +7,12 @@ const pkg = require('./package.json');
 
 const NODE_MODULES = path.resolve(__dirname, 'node_modules');
 
-// http://jlongster.com/Backend-Apps-with-Webpack--Part-I
-const externals = {};
-fs.readdirSync(NODE_MODULES)
-    .filter((x) => {
-        return ['.bin'].indexOf(x) === -1;
-    })
-    .forEach((mod) => {
-        externals[mod] = `commonjs ${mod}`;
-    });
+const nodeExternals = ({ request }, callback) => {
+    if (request && !request.startsWith('.') && !path.isAbsolute(request)) {
+        return callback(null, `commonjs ${request}`);
+    }
+    callback();
+};
 
 // Use publicPath for production
 // const payload = pkg.version;
@@ -36,7 +32,8 @@ module.exports = {
         extensions: ['.js', '.json', '.jsx', '.ts']
     },
     entry: {
-        index: './index.js'
+        index: './index.js',
+        'Pool.worker': './services/task-manager/Pool.worker.js',
     },
     output: {
         path: path.resolve(__dirname, 'dist/Luban/src/server'),
@@ -55,13 +52,6 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.worker\.(j|t)s$/,
-                loader: 'worker-loader',
-                options: {
-                    filename: '[name].js',
-                },
-            },
-            {
                 test: /\.ts$/,
                 loader: 'ts-loader',
                 options: {
@@ -76,7 +66,7 @@ module.exports = {
             }
         ]
     },
-    externals: externals,
+    externals: [nodeExternals],
     resolveLoader: {
         modules: [NODE_MODULES]
     },

@@ -14,6 +14,16 @@ const pkg = require('./package.json');
 
 const { CLIENT_PORT, SERVER_PORT } = pkg.config;
 
+const rendererWorkerEntries = {
+    'Pool.worker': path.resolve(__dirname, 'src/app/lib/manager/Pool.worker.js'),
+    'clipperPool.worker': path.resolve(__dirname, 'src/app/lib/manager/clipperPool.worker.js'),
+    'ClippingPoolManager.worker': path.resolve(
+        __dirname,
+        'src/app/lib/manager/ClippingPoolManager.worker.ts'
+    ),
+};
+const rendererWorkerNames = Object.keys(rendererWorkerEntries);
+
 const stylusLoaderOptions = {
     stylusOptions: {
         use: [nib()],
@@ -85,11 +95,16 @@ module.exports = {
     entry: {
         app: path.resolve(__dirname, 'src/app/index.jsx'),
         polyfill: path.resolve(__dirname, 'src/app/polyfill/index.js'),
-        // 'Pool.worker': path.resolve(__dirname, 'src/app/lib/manager/Pool.worker.js')
+        ...rendererWorkerEntries,
     },
     output: {
         path: path.resolve(__dirname, 'output/src/app'),
-        filename: '[name].[fullhash].bundle.js',
+        filename: (pathData) => {
+            if (rendererWorkerNames.includes(pathData.chunk.name)) {
+                return '[name].js';
+            }
+            return '[name].[fullhash].bundle.js';
+        },
         publicPath: '',
         globalObject: 'this',
         library: { type: 'umd' },
@@ -98,7 +113,7 @@ module.exports = {
         minimize: false,
         emitOnErrors: false,
         splitChunks: {
-            chunks: 'all',
+            chunks: (chunk) => !rendererWorkerNames.includes(chunk.name),
             cacheGroups: {
                 vendors: {
                     test: /[\\/]node_modules[\\/]/,
@@ -121,6 +136,7 @@ module.exports = {
         new HtmlWebpackPlugin({
             filename: 'index.html',
             template: path.resolve(__dirname, 'src/app/resources/assets/index.html'),
+            excludeChunks: rendererWorkerNames,
         })
     ],
     module: {
@@ -142,19 +158,6 @@ module.exports = {
                     emitWarning: false,
                     quiet: true,
                     configFile: path.resolve(__dirname, '.eslintrc.js'),
-                },
-            },
-            // workers
-            {
-                test: /\.worker\.(js|ts)$/,
-                include: [
-                    path.resolve(__dirname, 'src/app/lib/manager/'),
-                ],
-                exclude: /node_modules/,
-                loader: 'worker-loader',
-                options: {
-                    publicPath: '/worker/',
-                    filename: '[name].js',
                 },
             },
             // TypeScript/TSX

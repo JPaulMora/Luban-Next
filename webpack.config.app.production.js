@@ -25,6 +25,16 @@ const languages = require('./webpack.config.app-i18n').languages;
 const publicPath = './';
 const timestamp = new Date().getTime();
 
+const rendererWorkerEntries = {
+    'Pool.worker': path.resolve(__dirname, 'src/app/lib/manager/Pool.worker.js'),
+    'clipperPool.worker': path.resolve(__dirname, 'src/app/lib/manager/clipperPool.worker.js'),
+    'ClippingPoolManager.worker': path.resolve(
+        __dirname,
+        'src/app/lib/manager/ClippingPoolManager.worker.ts'
+    ),
+};
+const rendererWorkerNames = Object.keys(rendererWorkerEntries);
+
 const stylusLoaderOptions = {
     stylusOptions: {
         use: [nib()],
@@ -70,14 +80,21 @@ module.exports = {
         vendor: findImports([
             'src/app/**/*.{js,jsx}',
             '!src/app/polyfill/**/*.js',
-            '!src/app/**/*.development.js'
+            '!src/app/**/*.development.js',
+            '!src/app/lib/manager/*.worker.js',
         ], { flatten: true }),
-        app: path.resolve(__dirname, 'src/app/index.jsx')
+        app: path.resolve(__dirname, 'src/app/index.jsx'),
+        ...rendererWorkerEntries,
     },
     output: {
         path: path.resolve(__dirname, 'dist/Luban/src/app'),
         chunkFilename: `[name].[chunkhash].bundle.js?_=${timestamp}`,
-        filename: `[name].[chunkhash].bundle.js?_=${timestamp}`,
+        filename: (pathData) => {
+            if (rendererWorkerNames.includes(pathData.chunk.name)) {
+                return '[name].js';
+            }
+            return `[name].[chunkhash].bundle.js?_=${timestamp}`;
+        },
         publicPath: publicPath,
     },
     optimization: {
@@ -100,6 +117,7 @@ module.exports = {
         new HtmlWebpackPlugin({
             filename: 'index.html',
             template: path.resolve(__dirname, 'src/app/resources/assets/index.html'),
+            excludeChunks: rendererWorkerNames,
         })
     ],
     module: {
@@ -121,14 +139,6 @@ module.exports = {
                     emitWarning: false,
                     quiet: true,
                     configFile: path.resolve(__dirname, '.eslintrc.js'),
-                },
-            },
-            // workers
-            {
-                test: /\.worker\.(js|ts)$/,
-                loader: 'worker-loader',
-                options: {
-                    filename: '[name].js',
                 },
             },
             // TypeScript/TSX
