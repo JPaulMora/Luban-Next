@@ -20,6 +20,10 @@ fileAssociations:
 #
 asar: false
 asarUnpack: []
+# Native addons are rebuilt by build/electron-builder.sh via
+# electron-rebuild.sh (Python 3.12+ venv). Skip electron-builder's
+# own npm rebuild so it does not hit the system Python.
+npmRebuild: false
 
 #
 # publish options

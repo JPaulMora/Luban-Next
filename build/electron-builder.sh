@@ -33,4 +33,8 @@ echo "Rebuild native modules using electron ${electron_version}"
 
 npm run electron-rebuild -- --version=${electron_version:1} --module-dir=dist/Luban --which-module=font-scanner,serialport
 
+# Point any leftover node-gyp at the same venv electron-rebuild.sh uses.
+export PYTHON="$__dirname/.gyp-python/bin/python"
+export npm_config_python="$PYTHON"
+
 cross-env USE_HARD_LINKS=false npm run electron-builder -- "$@"
