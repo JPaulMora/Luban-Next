@@ -3,13 +3,17 @@ import { noop } from 'lodash';
 import includes from 'lodash/includes';
 import PropTypes from 'prop-types';
 import React, { PureComponent } from 'react';
-import * as Icons from 'snapmaker-react-icon';
+import * as snapmakerIcons from 'snapmaker-react-icon';
 import styles from './styles.styl';
 
 // FIXME: This is just a temporary solution. The correct approach would be to move this component into the xxx dependency library.
 import MainToolbarAbPosition from './Icons/MainToolbarAbPosition';
 
-Icons.MainToolbarAbPosition = MainToolbarAbPosition;
+// Module namespaces are getter-only. The production bundle cannot assign onto them.
+const Icons = {
+    ...snapmakerIcons,
+    MainToolbarAbPosition,
+};
 
 
 
