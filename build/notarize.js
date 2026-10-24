@@ -7,18 +7,17 @@ module.exports = async function notarizing(context) {
         return;
     }
 
-    if (!process.env.CI) {
+    const teamId = process.env.TEAMID;
+    const appleId = process.env.APPLEID;
+    const appleIdPassword = process.env.APPLEIDPASS;
+
+    if (!teamId || !appleId || !appleIdPassword) {
         return;
     }
 
-    // Notarize only when running on Travis-CI and has a tag.
     console.log('Notarizing application...');
 
     const appName = context.packager.appInfo.productFilename;
-
-    const teamId = process.env.TEAMID;;
-    const appleId = process.env.APPLEID;
-    const appleIdPassword = process.env.APPLEIDPASS;
 
     await notarize({
         appPath: `${appOutDir}/${appName}.app`,
