@@ -618,7 +618,7 @@ export const actions = {
         formData.append('isRotate', materials.isRotate);
 
         if (fileInfo) {
-            const { sourceWidth, sourceHeight, originalName, uploadName } = fileInfo;
+            const { sourceWidth, sourceHeight, originalName, uploadName, colorPalette } = fileInfo;
 
             dispatch(
                 actions.generateModel(headType, {
@@ -627,14 +627,17 @@ export const actions = {
                     sourceWidth,
                     sourceHeight,
                     mode,
-                    config: { svgNodeName: 'image' },
+                    config: {
+                        svgNodeName: 'image',
+                        ...(colorPalette ? { colorPalette } : {})
+                    },
                     isLimit
                 })
             );
         } else {
             api.uploadImage(formData)
                 .then(res => {
-                    const { sourceWidth, sourceHeight, originalName, uploadName } = res.body;
+                    const { sourceWidth, sourceHeight, originalName, uploadName, colorPalette } = res.body;
                     dispatch(
                         actions.generateModel(headType, {
                             originalName,
@@ -642,7 +645,10 @@ export const actions = {
                             sourceWidth: sourceWidth,
                             sourceHeight: sourceHeight,
                             mode,
-                            config: { svgNodeName: 'image' },
+                            config: {
+                                svgNodeName: 'image',
+                                ...(colorPalette ? { colorPalette } : {})
+                            },
                             isLimit
                         })
                     );

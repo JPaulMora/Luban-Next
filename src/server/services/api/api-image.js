@@ -101,6 +101,7 @@ export const set = async (req, res) => {
                 uploadName: tempName,
                 sourceWidth: svg.width,
                 sourceHeight: svg.height,
+                colorPalette: svg.colorPalette,
             });
         } else if (extname === '.dxf') {
             const result = await parseDxf(tempPath);

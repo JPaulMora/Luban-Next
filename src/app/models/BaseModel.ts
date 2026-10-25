@@ -78,6 +78,11 @@ export type ModelInfo = {
         whiteClip: number;
         invert: boolean
         svgNodeName: string;
+        colorPalette?: Array<{
+            role: 'fill' | 'stroke';
+            hex: string;
+            count: number;
+        }>;
     },
     mode: TMode,
     visible?: boolean,
