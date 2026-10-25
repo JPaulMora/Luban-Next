@@ -308,6 +308,27 @@ function isEmptyGroup(node) {
     return Object.keys(node).every(key => key === '$' || key === '_');
 }
 
+export function countFilteredGraphics(node) {
+    if (!isElementNode(node)) {
+        return 0;
+    }
+    let count = 0;
+    Object.keys(node).forEach((key) => {
+        if (key === '$' || key === '_') {
+            return;
+        }
+        const value = node[key];
+        const children = Array.isArray(value) ? value : [value];
+        for (const child of children) {
+            if (GRAPHIC_TAGS.has(key) && isElementNode(child)) {
+                count += 1;
+            }
+            count += countFilteredGraphics(child);
+        }
+    });
+    return count;
+}
+
 export function filterParsedNode(node, getPaint, colorFilter) {
     if (!node || typeof node !== 'object') {
         return node;

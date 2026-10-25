@@ -15,10 +15,12 @@ import PolylineTagParser from './PolylineTagParser';
 import RectTagParser from './RectTagParser';
 import SVGTagParser from './SVGTagParser';
 import TextParser from './TextParser';
+import { generateRandomPathName } from '../random-utils';
 import {
     aggregateColorPalette,
     applyPaintToTree,
     collectClassRules,
+    countFilteredGraphics,
     filterParsedNode,
     isElementNode
 } from './svgPaint';
@@ -172,6 +174,44 @@ class SVGParser {
                 resolve(outputPath);
             });
         });
+    }
+
+    async writeColorLayerFiles(parsedNode, outputDir, colorPalette) {
+        const layers = [];
+        if (!Array.isArray(colorPalette) || colorPalette.length === 0) {
+            return layers;
+        }
+        for (const swatch of colorPalette) {
+            if (!swatch || !swatch.role || !swatch.hex) {
+                continue;
+            }
+            const colorFilter = [{
+                role: swatch.role,
+                hex: swatch.hex
+            }];
+            const filtered = filterParsedNode(
+                parsedNode,
+                (node) => {
+                    if (!isElementNode(node)) {
+                        return undefined;
+                    }
+                    return this.resolvedPaint.get(node);
+                },
+                colorFilter
+            );
+            if (countFilteredGraphics(filtered) === 0) {
+                continue;
+            }
+            const uploadName = generateRandomPathName('layer.svg', true);
+            const outputPath = path.join(outputDir, uploadName);
+            await this.writeFilteredFile(parsedNode, outputPath, colorFilter);
+            layers.push({
+                uploadName,
+                role: swatch.role,
+                hex: swatch.hex
+            });
+        }
+        return layers;
     }
 
     async parse(s, element = SVG_TAG_SVG) {

@@ -1480,7 +1480,7 @@
     "key-Laser/Import-How should this SVG be imported?": "How should this SVG be imported?",
     "key-Laser/Import-Import as one object": "Import as one object",
     "key-Laser/Import-Process each color": "Process each color",
-    "key-Laser/Import-This file has more than one color. Choose whether to keep it as one object or create a toolpath for each color.": "This file has more than one color. Choose whether to keep it as one object or create a toolpath for each color.",
+    "key-Laser/Import-This file has more than one color. Choose whether to keep it as one object or create a toolpath for each color.": "This file has more than one color. Process each color as its own object, or keep the file as one object.",
     "key-Laser/LeftBar-Draw": "Pen",
     "key-Laser/LeftBar-Draw Done": "Done",
     "key-Laser/LeftBar-Draw Path": "Edit Nodes",

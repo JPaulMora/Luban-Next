@@ -109,6 +109,7 @@ function registerApis(app) {
 
     // Image
     app.post(urljoin(settings.route, 'api/image'), api.image.set);
+    app.post(urljoin(settings.route, 'api/image/splitByColor'), api.image.splitSvgByColor);
     app.post(urljoin(settings.route, 'api/image/stock'), api.image.stockRemapProcess);
     app.post(urljoin(settings.route, 'api/image/stitch'), api.image.processStitch);
     app.post(urljoin(settings.route, 'api/image/stitchEach'), api.image.processStitchEach);

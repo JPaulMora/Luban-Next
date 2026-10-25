@@ -298,6 +298,40 @@ export const processTakePhoto = (req, res) => {
             });
         });
 };
+export const splitSvgByColor = async (req, res) => {
+    try {
+        const uploadName = path.parse(req.body.uploadName || '').base;
+        const filePath = `${DataStorage.tmpDir}/${uploadName}`;
+        if (!uploadName || !/\.svg$/i.test(uploadName) || !fs.existsSync(filePath)) {
+            res.status(400).send({
+                msg: 'SVG not found'
+            });
+            return;
+        }
+
+        const parser = new SVGParser();
+        const svg = await parser.parseFile(filePath);
+        const palette = Array.isArray(req.body.colorPalette) && req.body.colorPalette.length > 0
+            ? req.body.colorPalette
+            : (svg.colorPalette || []);
+        const layers = await parser.writeColorLayerFiles(svg.parsedNode, DataStorage.tmpDir, palette);
+
+        res.send({
+            layers: layers.map((layer) => ({
+                ...layer,
+                sourceWidth: svg.width,
+                sourceHeight: svg.height
+            }))
+        });
+    } catch (err) {
+        log.error(`Failed to split SVG by color: ${err.message}`);
+        res.status(ERR_INTERNAL_SERVER_ERROR).send({
+            msg: 'Unable to split SVG by color',
+            error: String(err)
+        });
+    }
+};
+
 export const setCameraCalibrationMatrix = (req, res) => {
     const options = req.body;
     setMatrix(options)

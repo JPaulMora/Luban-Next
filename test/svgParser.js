@@ -153,6 +153,34 @@ test('filtered svg keeps fill on matching shapes and drops the other color', asy
     t.end();
 });
 
+test('writeColorLayerFiles writes one svg per fill swatch', async (t) => {
+    const parser = new SVGParser();
+    const result = await parser.parse(svg(
+        '<path fill="#ED1C24" d="M0 0 L10 0 L10 10 Z"/>'
+        + '<path fill="#00ff00" d="M20 0 L30 0 L30 10 Z"/>'
+    ));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'luban-svg-layers-'));
+    const layers = await parser.writeColorLayerFiles(result.parsedNode, dir, result.colorPalette);
+
+    t.equal(layers.length, 2);
+    const red = layers.find(layer => layer.hex === '#ed1c24');
+    const green = layers.find(layer => layer.hex === '#00ff00');
+    t.ok(red);
+    t.ok(green);
+
+    const redSvg = fs.readFileSync(path.join(dir, red.uploadName), 'utf8');
+    t.ok(redSvg.includes(FILTERED_FILL_STYLE));
+    t.ok(redSvg.includes('d="M0 0 L10 0 L10 10 Z"'));
+    t.ok(!redSvg.includes('d="M20 0 L30 0 L30 10 Z"'));
+
+    const greenSvg = fs.readFileSync(path.join(dir, green.uploadName), 'utf8');
+    t.ok(greenSvg.includes('d="M20 0 L30 0 L30 10 Z"'));
+    t.ok(!greenSvg.includes('d="M0 0 L10 0 L10 10 Z"'));
+
+    fs.rmSync(dir, { recursive: true, force: true });
+    t.end();
+});
+
 test('filtered svg matches stroke independently of fill', async (t) => {
     const parser = new SVGParser();
     const result = await parser.parse(svg(

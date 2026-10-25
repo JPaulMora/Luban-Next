@@ -12,6 +12,7 @@ import {
     COORDINATE_MODE_BOTTOM_CENTER,
     DATA_PREFIX,
     DISPLAYED_TYPE_MODEL,
+    DISPLAYED_TYPE_TOOLPATH,
     HEAD_LASER,
     MAX_LASER_CNC_CANVAS_SCALE,
     MIN_LASER_CNC_CANVAS_SCALE,
@@ -78,6 +79,8 @@ import { toast } from '../../ui/components/Toast';
 import { makeSceneToast } from '../../ui/views/toasts/SceneToast';
 import AddMaterialTestGenerate from '../operation-history/AddMaterialTestGenerate';
 import askSvgColorImport from '../../ui/pages/laser-main/svgImportPopup';
+import { getModelColorPalette } from '../../toolpaths/utils';
+import i18n from '../../lib/i18n';
 
 
 declare type HeadType = 'laser' | 'cnc';
@@ -634,6 +637,28 @@ export const actions = {
 
             startUploadProgress();
 
+            if (processByColor) {
+                try {
+                    const imported = await dispatch(
+                        actions.importSvgColorLayers(headType, {
+                            originalName,
+                            uploadName,
+                            sourceWidth,
+                            sourceHeight,
+                            mode,
+                            colorPalette,
+                            isLimit
+                        })
+                    );
+                    if (imported) {
+                        dispatch(actions.switchToPage(headType, PAGE_PROCESS));
+                        return;
+                    }
+                } catch (err) {
+                    log.error(err);
+                }
+            }
+
             await dispatch(
                 actions.generateModel(headType, {
                     originalName,
@@ -648,11 +673,6 @@ export const actions = {
                     isLimit
                 })
             );
-
-            if (processByColor) {
-                dispatch(processActions.createToolPathForEachColor(headType));
-                dispatch(actions.switchToPage(headType, PAGE_PROCESS));
-            }
         };
 
         if (fileInfo) {
@@ -688,6 +708,96 @@ export const actions = {
                     progressStatesManager.finishProgress(false);
                 });
         }
+    },
+
+    importSvgColorLayers: (
+        headType,
+        { originalName, uploadName, sourceWidth, sourceHeight, mode, colorPalette, isLimit = true }
+    ) => async (dispatch, getState) => {
+        const { autoPreviewEnabled, displayedType } = getState()[headType];
+        const splitRes = await api.splitSvgByColor({
+            uploadName,
+            colorPalette
+        });
+        const layers = splitRes && splitRes.body && splitRes.body.layers;
+        if (!Array.isArray(layers) || layers.length === 0) {
+            return false;
+        }
+
+        const baseName = path.basename(originalName, path.extname(originalName));
+        for (const layer of layers) {
+            const pathType = layer.role === 'fill' ? 'fill' : 'path';
+            const label = layer.role === 'fill'
+                ? i18n._('key-Laser/ToolpathParameters-Fill')
+                : i18n._('key-Laser/ToolpathParameters-Stroke');
+            const layerName = `${baseName} ${label} ${layer.hex}`;
+            await dispatch(
+                actions.generateModel(headType, {
+                    originalName: layerName,
+                    uploadName: layer.uploadName,
+                    sourceWidth: layer.sourceWidth || sourceWidth,
+                    sourceHeight: layer.sourceHeight || sourceHeight,
+                    mode,
+                    config: {
+                        svgNodeName: 'image'
+                    },
+                    isLimit
+                })
+            );
+            dispatch(processActions.createToolPathForSelected(headType, {
+                name: `${label} ${layer.hex}`,
+                pathType
+            }));
+        }
+
+        if (autoPreviewEnabled) {
+            dispatch(processActions.preview(headType));
+        }
+        if (displayedType !== DISPLAYED_TYPE_TOOLPATH) {
+            dispatch(
+                actions.updateState(headType, {
+                    simulationNeedToPreview: true,
+                    displayedType: DISPLAYED_TYPE_MODEL,
+                    needToPreview: true,
+                    isChangedAfterGcodeGenerating: true
+                })
+            );
+        }
+        dispatch(projectActions.autoSaveEnvironment(headType));
+        return true;
+    },
+
+    createToolPathForEachColor: headType => async (dispatch, getState) => {
+        const { modelGroup } = getState()[headType];
+        const selectedModels = modelGroup.getSelectedModelArray();
+        if (selectedModels.length === 1 && getModelColorPalette(selectedModels[0])) {
+            const model = selectedModels[0];
+            const imported = await dispatch(
+                actions.importSvgColorLayers(headType, {
+                    originalName: model.originalName,
+                    uploadName: model.resource.originalFile.name,
+                    sourceWidth: model.sourceWidth,
+                    sourceHeight: model.sourceHeight,
+                    mode: model.mode,
+                    colorPalette: getModelColorPalette(model),
+                    isLimit: false
+                })
+            );
+            if (imported) {
+                dispatch(actions.selectTargetModel(headType, model));
+                dispatch(actions.removeSelectedModel(headType));
+                dispatch(actions.switchToPage(headType, PAGE_PROCESS));
+            }
+            return;
+        }
+
+        for (const model of selectedModels) {
+            dispatch(actions.selectTargetModel(headType, model));
+            dispatch(processActions.createToolPathForSelected(headType, {
+                name: model.modelName || model.originalName
+            }));
+        }
+        dispatch(projectActions.autoSaveEnvironment(headType));
     },
 
     checkIsOversizeImage: (headType, file, onError) => async (dispatch, getState) => {

@@ -35,6 +35,7 @@ const uploadGcodeFile = defaultAPIFactory((formData) => request.post('/api/file/
 const uploadUpdateFile = defaultAPIFactory((formData) => request.post('/api/file/uploadUpdateFile').send(formData));
 const buildFirmwareFile = defaultAPIFactory((formData) => request.post('/api/file/buildFirmwareFile').send(formData));
 const uploadImage = defaultAPIFactory((formdata) => request.post('/api/image').send(formdata));
+const splitSvgByColor = defaultAPIFactory((options) => request.post('/api/image/splitByColor', options));
 
 //
 // Env
@@ -329,6 +330,7 @@ export default {
     buildFirmwareFile,
 
     uploadImage,
+    splitSvgByColor,
     stockRemapProcess,
     processStitch,
     processStitchEach,
