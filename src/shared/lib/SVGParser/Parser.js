@@ -15,6 +15,12 @@ import PolylineTagParser from './PolylineTagParser';
 import RectTagParser from './RectTagParser';
 import SVGTagParser from './SVGTagParser';
 import TextParser from './TextParser';
+import {
+    aggregateColorPalette,
+    applyPaintToTree,
+    collectClassRules,
+    filterParsedNode
+} from './svgPaint';
 // const DEFAULT_DPI = 72;
 const DEFAULT_MILLIMETER_PER_PIXEL = 25.4 / 72;
 // TODO: General tolerance does not work well if original drawing is small,
@@ -41,6 +47,9 @@ class SVGParser {
         };
         this.defs = {
         };
+        this.resolvedPaint = new WeakMap();
+        this.graphicPaints = [];
+        this.classRules = new Map();
     }
 
     readFile(filePath) {
@@ -137,6 +146,28 @@ class SVGParser {
         });
     }
 
+    generateFilteredString(parsedNode, colorFilter) {
+        const filtered = filterParsedNode(
+            parsedNode,
+            node => this.resolvedPaint.get(node),
+            colorFilter
+        );
+        const builder = new xml2js.Builder();
+        let result = builder.buildObject(filtered);
+        result = result.replace(/^<\?xml.+\?>/, '');
+        return result;
+    }
+
+    writeFilteredFile(parsedNode, outputPath, colorFilter) {
+        return new Promise((resolve, reject) => {
+            const result = this.generateFilteredString(parsedNode, colorFilter);
+            fs.writeFile(outputPath, result, (error) => {
+                if (error) reject(error);
+                resolve(outputPath);
+            });
+        });
+    }
+
     async parse(s, element = SVG_TAG_SVG) {
         const node = await this.readString(s);
         return this.parseObject(node, element);
@@ -190,9 +221,15 @@ class SVGParser {
             actualX: 0,
             actualY: 0,
             visibility: true,
-            xform: [1, 0, 0, 1, 0, 0]
+            xform: [1, 0, 0, 1, 0, 0],
+            resolvedFill: '#000000',
+            resolvedStroke: 'none',
+            resolvedColor: '#000000'
         };
         const parsedNode = cloneDeep(node);
+        this.resolvedPaint = new WeakMap();
+        this.graphicPaints = [];
+        this.classRules = collectClassRules(parsedNode);
         const root = await this.parseNode(element, parsedNode[element], parsedNode, initialAttributes);
         const newSvg = root.parsedSvg;
         const gArray = this.dragTextPathToParent(newSvg);
@@ -238,6 +275,7 @@ class SVGParser {
             viewBox: root.attributes.viewBox,
             width: root.attributes.width,
             height: root.attributes.height,
+            colorPalette: aggregateColorPalette(this.graphicPaints),
             // viewBox,
             // width: width / widthRatio,
             // height: height / heightRatio, // root.attributes.height,
@@ -343,6 +381,12 @@ class SVGParser {
                         shapes = shapes.concat(textObject.shapes);
                         attributes.positionX = textObject.positionX;
                         attributes.positionY = textObject.positionY;
+                        if (textObject.parsedNode && textObject.parsedNode.g) {
+                            applyPaintToTree(this.resolvedPaint, textObject.parsedNode.g, {
+                                fill: attributes.resolvedFill,
+                                stroke: attributes.resolvedStroke
+                            });
+                        }
                         if (Array.isArray(parent.g)) {
                             parent.g.push(textObject.parsedNode.g);
                         } else {
@@ -361,6 +405,12 @@ class SVGParser {
                         shapes = shapes.concat(textObject.shapes);
                         attributes.positionX = textObject.positionX;
                         attributes.positionY = textObject.positionY;
+                        if (textObject.parsedNode && textObject.parsedNode.g) {
+                            applyPaintToTree(this.resolvedPaint, textObject.parsedNode.g, {
+                                fill: attributes.resolvedFill,
+                                stroke: attributes.resolvedStroke
+                            });
+                        }
                         if (Array.isArray(parent.g)) {
                             parent.g.push(textObject.parsedNode.g);
                         } else {

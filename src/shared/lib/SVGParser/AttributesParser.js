@@ -1,7 +1,14 @@
 import log from 'loglevel';
 import { isUndefined } from 'lodash';
-import { parseFloats, cssColor2Hex, xformMultiply } from './Utils';
+import { parseFloats, xformMultiply } from './Utils';
 import { SVG_ATTR_ID, XLINK_HREF, SVG_ATTR_HREF, OVERRIDE_STYLE } from './constants';
+import {
+    GRAPHIC_TAGS,
+    mergeClassDeclarations,
+    parseColor,
+    parseDeclarations,
+    resolveElementPaint
+} from './svgPaint';
 
 
 function parseDAttribute(value) {
@@ -71,50 +78,6 @@ function parseCoordinate(value, fontSizeValue) {
     }
 
     return 0;
-}
-
-function parseColor(value) {
-    // https://developer.mozilla.org/en-US/docs/Web/SVG/Content_type#Color
-    // hex, rgb, color-keyword
-    value = value.trim();
-
-    if (value[0] === '#') {
-        // hex
-        if (value.length === 4) {
-            let hexColor = '#';
-            for (let i = 1; i < 4; i++) {
-                hexColor += value[i] + value[i];
-            }
-            return hexColor;
-        } else {
-            return value;
-        }
-    }
-
-    // RGB
-    if (value.startsWith('rgb(')) {
-        value = value.substr(4);
-        const floats = parseFloats(value);
-        if (value.indexOf('%') === -1) {
-            if (floats.length === 3) {
-                const hexValue = 0x1000000 + 0x10000 * floats[0] + 0x100 * floats[1] + floats[2];
-                return `#${Number(hexValue).toString(16).substr(1)}`;
-            }
-        } else if (floats.length === 3) {
-            // in percentage
-            const hexValue = 0x1000000 + 0x10000 * (floats[0] / 100) * 255 + 0x100 * (floats[1] / 100) * 255 + (floats[2] / 100) * 255;
-            return `#${Number(hexValue).toString(16).substr(1)}`;
-        }
-    }
-
-    const cssColor = cssColor2Hex(value);
-    if (cssColor) {
-        return cssColor;
-    }
-
-    log.warn('Unsupported color: ', value);
-    // TODO: rgba?, hsl?, url?
-    return null;
 }
 
 // function parsePaint(value) {
@@ -216,6 +179,22 @@ class AttributesParser {
         this.parser = parser;
     }
 
+    recordResolvedPaint(node, tag, paint) {
+        if (!this.parser || !this.parser.resolvedPaint) {
+            return;
+        }
+        this.parser.resolvedPaint.set(node, {
+            fill: paint.fill,
+            stroke: paint.stroke
+        });
+        if (GRAPHIC_TAGS.has(tag) && this.parser.graphicPaints) {
+            this.parser.graphicPaints.push({
+                fill: paint.fill,
+                stroke: paint.stroke
+            });
+        }
+    }
+
     parse(node, parentAttributes, tag) {
         const attributes = {};
         for (const key of ['fill', 'stroke', 'strokeWidth', 'visibility', 'width', 'height', 'fontFamily', 'dx', 'dy', 'fontSize']) {
@@ -230,13 +209,41 @@ class AttributesParser {
             // how to deal with '\\ntspan line 6' and '\n        tspan line 6\n    '
             attributes._ = (node._).trim();
         }
+
+        const parentPaint = {
+            fill: parentAttributes.resolvedFill,
+            stroke: parentAttributes.resolvedStroke,
+            color: parentAttributes.resolvedColor
+        };
+
         if (!node.$) {
+            const inheritedPaint = resolveElementPaint(parentPaint);
+            attributes.resolvedFill = inheritedPaint.fill;
+            attributes.resolvedStroke = inheritedPaint.stroke;
+            attributes.resolvedColor = inheritedPaint.color;
+            this.recordResolvedPaint(node, tag, inheritedPaint);
             return attributes;
         }
         let isTextElement = false;
         if (tag === 'text' || tag === 'tspan') {
             isTextElement = true;
         }
+
+        const presentation = {
+            fill: node.$.fill,
+            stroke: node.$.stroke,
+            color: node.$.color
+        };
+        const classDecls = mergeClassDeclarations(
+            node.$.class,
+            this.parser.classRules
+        );
+        const inlineDecls = parseDeclarations(node.$.style);
+        const paint = resolveElementPaint(parentPaint, presentation, classDecls, inlineDecls);
+        attributes.resolvedFill = paint.fill;
+        attributes.resolvedStroke = paint.stroke;
+        attributes.resolvedColor = paint.color;
+        this.recordResolvedPaint(node, tag, paint);
 
         node.$.fill = 'none';
         Object.keys(node.$).forEach((key) => {
