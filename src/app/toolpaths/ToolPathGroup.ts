@@ -157,7 +157,7 @@ class ToolPathGroup {
     }
 
     public createToolPath(options) {
-        const { materials, origin } = options;
+        const { materials, origin, colorFilter } = options;
 
         // const models = this.modelGroup.getSelectedToolPathModels();
         const models = this.modelGroup.getSelectedModelArray();
@@ -186,6 +186,7 @@ class ToolPathGroup {
             visibleModelIDs: this.modelGroup.selectedModelIDArray,
             modelGroup: this.modelGroup,
             gcodeConfig,
+            colorFilter,
             materials,
             origin,
         }).getState();

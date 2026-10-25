@@ -2,12 +2,45 @@ import fs from 'fs';
 import { throttle } from 'lodash';
 
 import { generateRandomPathName } from '../../../../shared/lib/random-utils';
+import SVGParser from '../../../../shared/lib/SVGParser';
 import { SOURCE_TYPE_RASTER, TOOLPATH_TYPE_VECTOR } from '../../../constants';
 import slice from '../../../slicer/call-engine';
 import logger from '../../../lib/logger';
 import sendMessage from '../utils/sendMessage';
 
 const log = logger('worker:generateToolPath');
+
+const applyColorFilter = async (modelInfo, taskId) => {
+    const colorFilter = modelInfo.colorFilter;
+    delete modelInfo.colorFilter;
+
+    if (
+        modelInfo.headType !== 'laser'
+        || modelInfo.type !== TOOLPATH_TYPE_VECTOR
+        || !Array.isArray(colorFilter)
+        || colorFilter.length === 0
+        || !/\.svg$/i.test(modelInfo.uploadName)
+        || /parsed\.svg$/i.test(modelInfo.uploadName)
+    ) {
+        return;
+    }
+
+    const originalPath = `${process.env.Tmpdir}/${modelInfo.uploadName}`;
+    if (!fs.existsSync(originalPath)) {
+        return;
+    }
+
+    try {
+        const parser = new SVGParser();
+        const parsed = await parser.parseFile(originalPath);
+        const filteredName = modelInfo.uploadName.replace(/\.svg$/i, `parsed-color-${taskId}.svg`);
+        const filteredPath = `${process.env.Tmpdir}/${filteredName}`;
+        await parser.writeFilteredFile(parsed.parsedNode, filteredPath, colorFilter);
+        modelInfo.uploadName = filteredName;
+    } catch (error) {
+        log.warn(`Failed to apply color filter: ${error.message}`);
+    }
+};
 
 const generateLaserToolPathFromEngine = async (allTasks, onProgress) => {
     // const allResultPromise = [];
@@ -23,7 +56,8 @@ const generateLaserToolPathFromEngine = async (allTasks, onProgress) => {
             if ([TOOLPATH_TYPE_VECTOR + SOURCE_TYPE_RASTER].includes(type + sourceType)) {
                 modelInfo.uploadName = modelInfo.processImageName;
             }
-            if (!/parsed\.svg$/i.test(modelInfo.uploadName)) {
+            await applyColorFilter(modelInfo, taskId);
+            if (!/parsed\.svg$/i.test(modelInfo.uploadName) && !/parsed-color-/.test(modelInfo.uploadName)) {
                 const newUploadName = modelInfo.uploadName.replace(/\.svg$/i, 'parsed.svg');
                 const uploadPath = `${process.env.Tmpdir}/${newUploadName}`;
                 if (fs.existsSync(uploadPath)) {

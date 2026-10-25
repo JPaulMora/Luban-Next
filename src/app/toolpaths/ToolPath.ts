@@ -55,6 +55,8 @@ class ToolPath {
 
     public gcodeConfig;
 
+    public colorFilter: Array<{ role: 'fill' | 'stroke'; hex: string }> = [];
+
     public toolParams;
 
     public materials;
@@ -77,6 +79,7 @@ class ToolPath {
             visibleModelIDs,
             modelIDs,
             gcodeConfig,
+            colorFilter = [],
             toolParams = {},
             materials = {},
             origin = {
@@ -106,6 +109,7 @@ class ToolPath {
         }
 
         this.gcodeConfig = { ...gcodeConfig };
+        this.colorFilter = Array.isArray(colorFilter) ? colorFilter.map(entry => ({ ...entry })) : [];
         this.toolParams = { ...toolParams };
         this.modelGroup = modelGroup;
 
@@ -147,6 +151,7 @@ class ToolPath {
             gcodeConfig: {
                 ...this.gcodeConfig,
             },
+            colorFilter: this.colorFilter.map(entry => ({ ...entry })),
             toolParams: {
                 ...this.toolParams,
             },
@@ -175,6 +180,7 @@ class ToolPath {
             visible = this.visible,
             useLegacyEngine = this.useLegacyEngine,
             gcodeConfig = this.gcodeConfig,
+            colorFilter = this.colorFilter,
             toolParams = this.toolParams,
             materials = this.materials,
             visibleModelIDs = this.visibleModelIDs,
@@ -189,6 +195,7 @@ class ToolPath {
         this.gcodeConfig = {
             ...gcodeConfig,
         };
+        this.colorFilter = Array.isArray(colorFilter) ? colorFilter.map(entry => ({ ...entry })) : [];
         this.toolParams = {
             ...toolParams,
         };
@@ -376,6 +383,7 @@ class ToolPath {
                 type: this.type,
                 useLegacyEngine: this.useLegacyEngine,
                 gcodeConfig: this.gcodeConfig,
+                colorFilter: this.colorFilter,
                 toolParams: this.toolParams,
                 materials: this.materials,
             };
