@@ -68,6 +68,7 @@ export class ModalHOC extends PureComponent {
         defaultInputValue: PropTypes.string,
         type: PropTypes.string,
         cancelTitle: PropTypes.string,
+        cancelWidth: PropTypes.string,
         isConfirm: PropTypes.bool,
         title: PropTypes.node,
         body: PropTypes.node,
@@ -110,7 +111,7 @@ export class ModalHOC extends PureComponent {
     }
 
     render() {
-        const { title, body, footer, footerLeft, size, type, cancelTitle, isConfirm, ...rest } = this.props;
+        const { title, body, footer, footerLeft, size, type, cancelTitle, cancelWidth, isConfirm, ...rest } = this.props;
         const { show, inputValue } = this.state;
         const defalutCancelTitle = isConfirm ? i18n._('key-Modal/Common-Confirm') : i18n._('key-Modal/Common-Cancel');
         const newTitle = cancelTitle ? i18n._(cancelTitle) : defalutCancelTitle;
@@ -160,7 +161,7 @@ export class ModalHOC extends PureComponent {
                         priority={isConfirm ? 'level-two' : ''}
                         type={isConfirm ? 'primary' : 'default'}
                         onClick={this.handleClose}
-                        width="96px"
+                        width={cancelWidth || '96px'}
                     >
                         {newTitle}
                     </Button>

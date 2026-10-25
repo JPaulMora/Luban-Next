@@ -77,6 +77,7 @@ import UpdateHrefOperation2D from '../operation-history/UpdateHrefOperation2D';
 import { toast } from '../../ui/components/Toast';
 import { makeSceneToast } from '../../ui/views/toasts/SceneToast';
 import AddMaterialTestGenerate from '../operation-history/AddMaterialTestGenerate';
+import askSvgColorImport from '../../ui/pages/laser-main/svgImportPopup';
 
 
 declare type HeadType = 'laser' | 'cnc';
@@ -617,10 +618,14 @@ export const actions = {
         formData.append('image', file);
         formData.append('isRotate', materials.isRotate);
 
-        if (fileInfo) {
-            const { sourceWidth, sourceHeight, originalName, uploadName, colorPalette } = fileInfo;
+        const importImage = async ({ sourceWidth, sourceHeight, originalName, uploadName, colorPalette }) => {
+            const processByColor = headType === HEAD_LASER
+                && mode === PROCESS_MODE_VECTOR
+                && Array.isArray(colorPalette)
+                && colorPalette.length > 1
+                && await askSvgColorImport();
 
-            dispatch(
+            await dispatch(
                 actions.generateModel(headType, {
                     originalName,
                     uploadName,
@@ -634,24 +639,33 @@ export const actions = {
                     isLimit
                 })
             );
+
+            if (processByColor) {
+                dispatch(processActions.createToolPathForEachColor(headType));
+                dispatch(actions.switchToPage(headType, PAGE_PROCESS));
+            }
+        };
+
+        if (fileInfo) {
+            const { sourceWidth, sourceHeight, originalName, uploadName, colorPalette } = fileInfo;
+            importImage({
+                sourceWidth,
+                sourceHeight,
+                originalName,
+                uploadName,
+                colorPalette
+            });
         } else {
             api.uploadImage(formData)
-                .then(res => {
+                .then(async (res) => {
                     const { sourceWidth, sourceHeight, originalName, uploadName, colorPalette } = res.body;
-                    dispatch(
-                        actions.generateModel(headType, {
-                            originalName,
-                            uploadName,
-                            sourceWidth: sourceWidth,
-                            sourceHeight: sourceHeight,
-                            mode,
-                            config: {
-                                svgNodeName: 'image',
-                                ...(colorPalette ? { colorPalette } : {})
-                            },
-                            isLimit
-                        })
-                    );
+                    await importImage({
+                        sourceWidth,
+                        sourceHeight,
+                        originalName,
+                        uploadName,
+                        colorPalette
+                    });
                 })
                 .catch(err => {
                     log.error(err);
