@@ -607,23 +607,32 @@ export const actions = {
      */
     uploadImage: (headType, file, mode, onError, isLimit = true, fileInfo) => (dispatch, getState) => {
         const { materials, progressStatesManager } = getState()[headType];
-        progressStatesManager.startProgress(PROCESS_STAGE.CNC_LASER_UPLOAD_IMAGE, [1, 1]);
-        dispatch(
-            actions.updateState(headType, {
-                stage: STEP_STAGE.CNC_LASER_UPLOADING_IMAGE,
-                progress: progressStatesManager.updateProgress(STEP_STAGE.CNC_LASER_UPLOADING_IMAGE, 0.25)
-            })
-        );
         const formData = new FormData();
         formData.append('image', file);
         formData.append('isRotate', materials.isRotate);
 
+        const startUploadProgress = () => {
+            progressStatesManager.startProgress(PROCESS_STAGE.CNC_LASER_UPLOAD_IMAGE, [1, 1]);
+            dispatch(
+                actions.updateState(headType, {
+                    stage: STEP_STAGE.CNC_LASER_UPLOADING_IMAGE,
+                    progress: progressStatesManager.updateProgress(STEP_STAGE.CNC_LASER_UPLOADING_IMAGE, 0.25)
+                })
+            );
+        };
+
         const importImage = async ({ sourceWidth, sourceHeight, originalName, uploadName, colorPalette }) => {
-            const processByColor = headType === HEAD_LASER
+            let processByColor = false;
+            if (
+                headType === HEAD_LASER
                 && mode === PROCESS_MODE_VECTOR
                 && Array.isArray(colorPalette)
                 && colorPalette.length > 1
-                && await askSvgColorImport();
+            ) {
+                processByColor = await askSvgColorImport();
+            }
+
+            startUploadProgress();
 
             await dispatch(
                 actions.generateModel(headType, {
