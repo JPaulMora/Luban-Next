@@ -19,7 +19,8 @@ import {
     aggregateColorPalette,
     applyPaintToTree,
     collectClassRules,
-    filterParsedNode
+    filterParsedNode,
+    isElementNode
 } from './svgPaint';
 // const DEFAULT_DPI = 72;
 const DEFAULT_MILLIMETER_PER_PIXEL = 25.4 / 72;
@@ -149,7 +150,12 @@ class SVGParser {
     generateFilteredString(parsedNode, colorFilter) {
         const filtered = filterParsedNode(
             parsedNode,
-            node => this.resolvedPaint.get(node),
+            (node) => {
+                if (!isElementNode(node)) {
+                    return undefined;
+                }
+                return this.resolvedPaint.get(node);
+            },
             colorFilter
         );
         const builder = new xml2js.Builder();
@@ -339,7 +345,7 @@ class SVGParser {
         // const tag = node['#name'];
         let shapes = [];
 
-        if (node) {
+        if (isElementNode(node)) {
             const attributes = this.attributeParser.parse(node, parentAttributes, tag);
             this.parseUseStructure(tag, node, parent, attributes);
 

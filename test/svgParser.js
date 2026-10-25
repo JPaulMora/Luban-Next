@@ -51,6 +51,21 @@ test('parser reads inline style and inherited group fill', async (t) => {
     t.end();
 });
 
+test('parser reads class rules from a defs style text node', async (t) => {
+    const parser = new SVGParser();
+    const result = await parser.parse(svg(
+        '<defs><style>.cls-1{fill:#0073b7;}.cls-2{fill:#fff;}.cls-3{fill:#a6d434;}</style></defs>'
+        + '<path class="cls-2" d="M0 0 L10 0 L10 10 Z"/>'
+        + '<polygon class="cls-1" points="0,0 10,0 5,10"/>'
+        + '<polygon class="cls-3" points="20,0 30,0 25,10"/>'
+    ));
+
+    t.equal(findPalette(result.colorPalette, 'fill', '#ffffff').count, 1);
+    t.equal(findPalette(result.colorPalette, 'fill', '#0073b7').count, 1);
+    t.equal(findPalette(result.colorPalette, 'fill', '#a6d434').count, 1);
+    t.end();
+});
+
 test('parser reads illustrator class rules', async (t) => {
     const parser = new SVGParser();
     const result = await parser.parse(svg(

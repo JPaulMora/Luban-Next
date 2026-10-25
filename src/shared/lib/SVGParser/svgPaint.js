@@ -1,5 +1,19 @@
 import { parseFloats, cssColor2Hex } from './Utils';
 
+export function isElementNode(node) {
+    return node !== null && typeof node === 'object' && !Array.isArray(node);
+}
+
+function styleSheetText(styleNode) {
+    if (typeof styleNode === 'string') {
+        return styleNode;
+    }
+    if (styleNode && typeof styleNode._ === 'string') {
+        return styleNode._;
+    }
+    return '';
+}
+
 export const GRAPHIC_TAGS = new Set([
     'circle',
     'ellipse',
@@ -139,7 +153,7 @@ export function collectClassRules(node, rules = new Map()) {
     }
     if (Array.isArray(node.style)) {
         for (const styleNode of node.style) {
-            const css = styleNode && styleNode._;
+            const css = styleSheetText(styleNode);
             if (css) {
                 const parsed = parseStyleSheet(css);
                 parsed.forEach((decls, className) => {

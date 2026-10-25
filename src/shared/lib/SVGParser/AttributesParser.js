@@ -4,6 +4,7 @@ import { parseFloats, xformMultiply } from './Utils';
 import { SVG_ATTR_ID, XLINK_HREF, SVG_ATTR_HREF, OVERRIDE_STYLE } from './constants';
 import {
     GRAPHIC_TAGS,
+    isElementNode,
     mergeClassDeclarations,
     parseColor,
     parseDeclarations,
@@ -180,7 +181,7 @@ class AttributesParser {
     }
 
     recordResolvedPaint(node, tag, paint) {
-        if (!this.parser || !this.parser.resolvedPaint) {
+        if (!this.parser || !this.parser.resolvedPaint || !isElementNode(node)) {
             return;
         }
         this.parser.resolvedPaint.set(node, {
