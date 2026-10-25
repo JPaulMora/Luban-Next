@@ -12,7 +12,7 @@ Our goal is to provide a multi-functional 3D software, while making it as access
 The software is inspired by [cncjs](https://github.com/cncjs/cncjs) by cheton.
 We use [LunarSlicer](https://github.com/Snapmaker/LunarSlicer) for 3D slicing.
 
-This repository is [Luban-Next](https://github.com/JPaulMora/Luban-Next), a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban). The current version is 4.16.0.
+This repository is [Luban-Next](https://github.com/JPaulMora/Luban-Next), a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban). The current version is 4.17.0.
 
 ## Startup
 
