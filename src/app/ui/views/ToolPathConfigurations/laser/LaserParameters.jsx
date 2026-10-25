@@ -8,6 +8,8 @@ import GcodeParameters from './GcodeParameters';
 import { TextInput } from '../../../components/Input';
 import TipTrigger from '../../../components/TipTrigger';
 import { L20WLaserToolModule, L40WLaserToolModule } from '../../../../machines/snapmaker-2-toolheads';
+import { getToolPathColorPalette } from '../../../../toolpaths/utils';
+import ColorSwatchChecklist from './ColorSwatches';
 
 class LaserParameters extends PureComponent {
     static propTypes = {
@@ -29,6 +31,7 @@ class LaserParameters extends PureComponent {
 
         activeMachine: PropTypes.object,
         toolHeadIdentifier: PropTypes.string,
+        models: PropTypes.array,
     };
 
     state = {
@@ -104,9 +107,10 @@ class LaserParameters extends PureComponent {
     };
 
     render() {
-        const { toolPath, multipleEngine, activeMachine, toolHeadIdentifier } = this.props;
+        const { toolPath, multipleEngine, activeMachine, toolHeadIdentifier, models } = this.props;
 
-        const { useLegacyEngine, name } = toolPath;
+        const { useLegacyEngine, name, colorFilter } = toolPath;
+        const colorPalette = getToolPathColorPalette(toolPath, models);
 
         const zOffsetEnabled = activeMachine.metadata.size.z > 0;
         const halfDiodeModeEnabled = includes([L40WLaserToolModule.identifier], toolHeadIdentifier);
@@ -142,6 +146,21 @@ class LaserParameters extends PureComponent {
                             />
                         </div>
                     </TipTrigger>
+                    {colorPalette && (
+                        <TipTrigger
+                            title={i18n._('key-Laser/ToolpathParameters-Colors')}
+                            content={i18n._('key-Laser/ToolpathParameters-Select the colors to include in this toolpath.')}
+                            maxWidth="middle"
+                        >
+                            <ColorSwatchChecklist
+                                palette={colorPalette}
+                                colorFilter={colorFilter}
+                                onChange={(nextFilter) => {
+                                    this.props.updateToolPath({ colorFilter: nextFilter });
+                                }}
+                            />
+                        </TipTrigger>
+                    )}
                     <GcodeParameters
                         toolPath={this.props.toolPath}
                         activeToolDefinition={this.props.activeToolDefinition}
@@ -165,12 +184,13 @@ class LaserParameters extends PureComponent {
 const mapStateToProps = (state) => {
     const activeMachine = state.machine.activeMachine;
     const { multipleEngine, toolHead } = state.machine;
-    const { materials } = state.laser;
+    const { materials, modelGroup } = state.laser;
     return {
         multipleEngine,
         materials,
         activeMachine,
         toolHeadIdentifier: toolHead.laserToolhead,
+        models: modelGroup ? modelGroup.getModels() : [],
     };
 };
 

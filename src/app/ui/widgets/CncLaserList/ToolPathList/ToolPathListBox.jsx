@@ -19,9 +19,12 @@ import ToolPathFastConfigurations from '../../../views/ToolPathConfigurations/To
 import {
     PAGE_EDITOR,
     PAGE_PROCESS,
-    DISPLAYED_TYPE_TOOLPATH
+    DISPLAYED_TYPE_TOOLPATH,
+    HEAD_LASER
 } from '../../../../constants';
 import ContextMenu from '../../../components/ContextMenu';
+import { getModelColorPalette } from '../../../../toolpaths/utils';
+import { ColorSwatchChips } from '../../../views/ToolPathConfigurations/laser/ColorSwatches';
 
 
 const ToolpathItem = ({
@@ -99,6 +102,7 @@ const ToolpathItem = ({
                     <span className={classNames(styles['suffix-name'])}>
                         {suffixName}
                     </span>
+                    <ColorSwatchChips colorFilter={toolPath.colorFilter} />
                 </Anchor>
                 <div className={classNames('sm-flex', 'height-24', 'margin-right-16')}>
                     <i
@@ -156,6 +160,11 @@ const ToolPathListBox = (props) => {
     const selectedModelArray = useSelector(state => state[props.headType]?.modelGroup?.getSelectedModelArray());
     const dispatch = useDispatch();
 
+    const selectedColorPalette = props.headType === HEAD_LASER
+        && selectedModelArray
+        && selectedModelArray.length === 1
+        ? getModelColorPalette(selectedModelArray[0])
+        : null;
     const contextMenuDisabled = (selectedToolPathIDArray.length !== 1);
     const selectedFirstToolPathId = selectedToolPathIDArray.length === 1 ? selectedToolPathIDArray[0] : null;
     const selectedFirstToolPath = toolPaths.find(d => d.id === selectedFirstToolPathId);
@@ -220,6 +229,9 @@ const ToolPathListBox = (props) => {
         createToolPath: () => {
             const toolpath = dispatch(editorActions.createToolPath(props.headType));
             setEditingToolpath(toolpath);
+        },
+        createToolPathForEachColor: () => {
+            dispatch(editorActions.createToolPathForEachColor(props.headType));
         },
         showContextMenu: (event) => {
             setTimeout(() => {
@@ -360,6 +372,18 @@ const ToolPathListBox = (props) => {
                     >
                         {i18n._('key-CncLaser/ToolPathList/Button/-Create Toolpath')}
                     </Button>
+                    {selectedColorPalette && (
+                        <Button
+                            type="default"
+                            priority="level-two"
+                            width="100%"
+                            className="margin-top-8"
+                            onClick={actions.createToolPathForEachColor}
+                            disabled={isOnABPosition || inProgress}
+                        >
+                            {i18n._('key-CncLaser/ToolPathList/Button/-Create Toolpath for Each Color')}
+                        </Button>
+                    )}
                 </div>
             </div>
             <ContextMenu

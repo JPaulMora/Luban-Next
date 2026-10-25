@@ -64,6 +64,33 @@ export const getToolPathType = (models) => {
     return types;
 };
 
+export const getModelColorPalette = (model) => {
+    if (!model || model.mode !== PROCESS_MODE_VECTOR) {
+        return null;
+    }
+    const palette = model.config && model.config.colorPalette;
+    if (!Array.isArray(palette) || palette.length === 0) {
+        return null;
+    }
+    return palette;
+};
+
+export const getToolPathColorPalette = (toolPath, models) => {
+    if (!toolPath || toolPath.type !== TOOLPATH_TYPE_VECTOR) {
+        return null;
+    }
+    const ids = toolPath.visibleModelIDs || [];
+    if (ids.length !== 1 || !Array.isArray(models)) {
+        return null;
+    }
+    const model = models.find(item => item.modelID === ids[0]);
+    return getModelColorPalette(model);
+};
+
+export const isSameColorFilterEntry = (a, b) => {
+    return a && b && a.role === b.role && a.hex === b.hex;
+};
+
 export const getModelsByToolPathType = (models) => {
     const types = getToolPathType(models);
     const modelObj = {};

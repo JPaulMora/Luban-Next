@@ -13,7 +13,7 @@ import { logSvgSlice } from '../../lib/gaEvent';
 import i18n from '../../lib/i18n';
 import { PROCESS_STAGE, STEP_STAGE } from '../../lib/manager/ProgressManager';
 import ToolPathGroup from '../../toolpaths/ToolPathGroup';
-import { getToolPathType } from '../../toolpaths/utils';
+import { getModelColorPalette, getToolPathType } from '../../toolpaths/utils';
 import { toast } from '../../ui/components/Toast';
 import { makeSceneToast } from '../../ui/views/toasts/SceneToast';
 import definitionManager from '../manager/DefinitionManager';
@@ -245,6 +245,63 @@ export const processActions = {
             );
         }
         return toolPath;
+    },
+
+    createToolPathForEachColor: headType => (dispatch, getState) => {
+        const { toolPathGroup, materials, modelGroup, autoPreviewEnabled, displayedType } = getState()[headType];
+        const selectedModels = modelGroup.getSelectedModelArray();
+        const palette = selectedModels.length === 1 ? getModelColorPalette(selectedModels[0]) : null;
+        if (!palette) {
+            return;
+        }
+
+        const origin: Origin = getState()[headType].origin;
+
+        for (const swatch of palette) {
+            const pathType = swatch.role === 'fill' ? 'fill' : 'path';
+            const label = swatch.role === 'fill'
+                ? i18n._('key-Laser/ToolpathParameters-Fill')
+                : i18n._('key-Laser/ToolpathParameters-Stroke');
+            const toolPath = toolPathGroup.createToolPath({
+                materials,
+                colorFilter: [{
+                    role: swatch.role,
+                    hex: swatch.hex
+                }]
+            });
+            if (!toolPath) {
+                continue;
+            }
+            toolPath.name = `${label} ${swatch.hex}`;
+            toolPath.gcodeConfig = {
+                ...toolPath.gcodeConfig,
+                pathType,
+                ...(pathType === 'fill'
+                    ? { multiPassEnabled: false, multiPasses: 1 }
+                    : { multiPassEnabled: true })
+            };
+            toolPathGroup.saveToolPath(toolPath, { materials, origin }, false);
+        }
+
+        dispatch(
+            baseActions.updateState(headType, {
+                isChangedAfterGcodeGenerating: true
+            })
+        );
+        if (autoPreviewEnabled) {
+            dispatch(processActions.preview(headType));
+        }
+        if (displayedType !== DISPLAYED_TYPE_TOOLPATH) {
+            dispatch(
+                baseActions.updateState(headType, {
+                    simulationNeedToPreview: true,
+                    displayedType: DISPLAYED_TYPE_MODEL,
+                    needToPreview: true,
+                    isChangedAfterGcodeGenerating: true
+                })
+            );
+        }
+        dispatch(projectActions.autoSaveEnvironment(headType));
     },
 
     selectToolPathById: (headType, toolPathId) => (dispatch, getState) => {
