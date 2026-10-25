@@ -5,7 +5,7 @@ import { test } from 'tape';
 
 import SVGParser from '../src/shared/lib/SVGParser';
 import { OVERRIDE_STYLE } from '../src/shared/lib/SVGParser/constants';
-import { normalizePaint } from '../src/shared/lib/SVGParser/svgPaint';
+import { FILTERED_FILL_STYLE, normalizePaint } from '../src/shared/lib/SVGParser/svgPaint';
 
 
 const svg = (body) => (
@@ -137,7 +137,7 @@ test('unfiltered parsed svg still uses OVERRIDE_STYLE', async (t) => {
     t.end();
 });
 
-test('filtered svg keeps OVERRIDE_STYLE and drops the other color', async (t) => {
+test('filtered svg keeps fill on matching shapes and drops the other color', async (t) => {
     const parser = new SVGParser();
     const result = await parser.parse(svg(
         '<path fill="#ED1C24" d="M0 0 L10 0 L10 10 Z"/>'
@@ -147,7 +147,7 @@ test('filtered svg keeps OVERRIDE_STYLE and drops the other color', async (t) =>
         { role: 'fill', hex: '#ed1c24' }
     ]);
 
-    t.ok(filtered.includes(OVERRIDE_STYLE));
+    t.ok(filtered.includes(FILTERED_FILL_STYLE));
     t.ok(filtered.includes('d="M0 0 L10 0 L10 10 Z"'));
     t.ok(!filtered.includes('d="M20 0 L30 0 L30 10 Z"'));
     t.end();
@@ -163,6 +163,7 @@ test('filtered svg matches stroke independently of fill', async (t) => {
         { role: 'stroke', hex: '#000000' }
     ]);
 
+    t.ok(filtered.includes(OVERRIDE_STYLE));
     t.ok(filtered.includes('d="M0 0 L10 0 L10 10 Z"'));
     t.ok(!filtered.includes('d="M20 0 L30 0 L30 10 Z"'));
     t.end();

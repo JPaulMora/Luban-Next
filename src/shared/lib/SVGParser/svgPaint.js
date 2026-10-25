@@ -1,4 +1,8 @@
+import { OVERRIDE_STYLE } from './constants';
 import { parseFloats, cssColor2Hex } from './Utils';
+
+export const FILTERED_FILL_STYLE = 'fill: #000; stroke: none; vector-effect: non-scaling-stroke;';
+export const FILTERED_BOTH_STYLE = 'fill: #000; stroke: #000; stroke-width: 0.4px; vector-effect: non-scaling-stroke;';
 
 export function isElementNode(node) {
     return node !== null && typeof node === 'object' && !Array.isArray(node);
@@ -267,6 +271,18 @@ export function aggregateColorPalette(paints) {
     return Array.from(counts.values());
 }
 
+export function styleForMatchedPaint(paint, colorFilter) {
+    const fillMatch = colorFilter.some(entry => entry && entry.role === 'fill' && paint && paint.fill === entry.hex);
+    const strokeMatch = colorFilter.some(entry => entry && entry.role === 'stroke' && paint && paint.stroke === entry.hex);
+    if (fillMatch && strokeMatch) {
+        return FILTERED_BOTH_STYLE;
+    }
+    if (fillMatch) {
+        return FILTERED_FILL_STYLE;
+    }
+    return OVERRIDE_STYLE;
+}
+
 export function matchesColorFilter(paint, colorFilter) {
     if (!paint || !colorFilter || colorFilter.length === 0) {
         return false;
@@ -299,10 +315,18 @@ export function filterParsedNode(node, getPaint, colorFilter) {
 
     function filterChild(key, child) {
         if (GRAPHIC_TAGS.has(key)) {
-            if (!matchesColorFilter(getPaint(child), colorFilter)) {
+            const paint = getPaint(child);
+            if (!matchesColorFilter(paint, colorFilter)) {
                 return null;
             }
-            return filterParsedNode(child, getPaint, colorFilter);
+            const filtered = filterParsedNode(child, getPaint, colorFilter);
+            if (filtered && typeof filtered === 'object') {
+                filtered.$ = {
+                    ...(filtered.$ || {})
+                };
+                filtered.$.style = styleForMatchedPaint(paint, colorFilter);
+            }
+            return filtered;
         }
         const filtered = filterParsedNode(child, getPaint, colorFilter);
         if (key === 'g' && isEmptyGroup(filtered)) {
@@ -313,7 +337,9 @@ export function filterParsedNode(node, getPaint, colorFilter) {
 
     const copy = {};
     if (node.$) {
-        copy.$ = node.$;
+        copy.$ = {
+            ...node.$
+        };
     }
     if (node._ !== undefined) {
         copy._ = node._;
