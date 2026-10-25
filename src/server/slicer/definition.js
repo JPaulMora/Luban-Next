@@ -477,10 +477,18 @@ export function loadDefinitionsByPrefixName(headType, prefix = 'material', confi
     return loadDefinitionsByRegex(headType, configPath, regex, defaultId);
 }
 
+function resolveDefaultPredefinedFilename(headType, configDir) {
+    const candidates = [];
+    if (headType === 'laser') {
+        // SM2 / Artisan / Ray packs use basswood; Original 200mW / 1600mW still use present.*
+        candidates.push(DEFAULT_PREDEFINED_ID['10w-laser'], DEFAULT_PREDEFINED_ID.laser);
+    } else if (DEFAULT_PREDEFINED_ID[headType]) {
+        candidates.push(DEFAULT_PREDEFINED_ID[headType]);
+    }
+    return candidates.find(filename => fs.existsSync(path.join(configDir, filename))) || null;
+}
+
 export function loadAllSeriesDefinitions(isDefault = false, headType, configPath = 'A150') {
-    // TODO: series name?
-    const _headType = (headType === 'laser' && includes(configPath, '10w')) ? '10w-laser' : headType;
-    const predefined = DEFAULT_PREDEFINED_ID[_headType];
     const definitions = [];
 
     const configDir = isDefault ? `${DataStorage.defaultConfigDir}/${configPath}` : `${DataStorage.configDir}/${configPath}`;
@@ -496,15 +504,23 @@ export function loadAllSeriesDefinitions(isDefault = false, headType, configPath
         for (const filename of defaultFilenames) {
             if (filename !== 'machine.def.json' && ConfigV1Regex.test(filename)) {
                 const definitionLoader = loadDefinitionLoaderByFilename(headType, filename, configPath, isDefault);
-                definitions.push(definitionLoader.toObject());
+                if (definitionLoader) {
+                    definitions.push(definitionLoader.toObject());
+                }
             }
         }
     } else {
-        const defaultDefinitionLoader = loadDefinitionLoaderByFilename(headType, predefined, configPath);
+        const predefined = resolveDefaultPredefinedFilename(headType, configDir);
+        const defaultDefinitionLoader = predefined
+            ? loadDefinitionLoaderByFilename(headType, predefined, configPath)
+            : null;
         for (const filename of defaultFilenames) {
             if (ConfigV1Regex.test(filename)) {
                 try {
                     const definitionLoader = loadDefinitionLoaderByFilename(headType, filename, configPath, isDefault);
+                    if (!definitionLoader) {
+                        continue;
+                    }
                     if (!definitionLoader.isRecommended && defaultDefinitionLoader) {
                         const ownKeys = Array.from(defaultDefinitionLoader.ownKeys).filter(e => !definitionLoader.ownKeys.has(e));
                         if (ownKeys && ownKeys.length > 0) {
