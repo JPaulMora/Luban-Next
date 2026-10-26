@@ -77,9 +77,9 @@ New code follows the language of the module it edits. When you rewrite a `.js` m
 
 ## Current state
 
-As of 2026-10-24:
+As of 2026-10-25:
 
-- Fork remote is `git@github.com:JPaulMora/Luban-Next.git`, branch `main`, version `4.17.0`. History matches upstream through `db573f5df` (`Feature: Update Chinese i18n`). First fork-only commits are the agent instruction files and the Python 3.12+ native rebuild wrapper. No open issues on the fork.
+- Fork remote is `git@github.com:JPaulMora/Luban-Next.git`, branch `main`, version `4.17.1`. History matches upstream through `db573f5df` (`Feature: Update Chinese i18n`). First fork-only commits are the agent instruction files and the Python 3.12+ native rebuild wrapper. No open issues on the fork.
 - Stack: Electron 15.5.7, React 18.3.1, Redux 4, Ant Design 4.24, Three 0.124, TypeScript 4.4.4, Webpack 5.112, Gulp 4, Socket.IO 4.5, Stylus. Renderer workers (`Pool.worker`, `clipperPool.worker`, `ClippingPoolManager.worker`) are webpack entries. Images and fonts use webpack asset modules. The renderer still runs with `nodeIntegration` and remote enabled.
 - About 313 `.js`, 224 `.jsx`, 252 `.ts`, 148 `.tsx`, and 118 `.styl` files under `src` and `packages`. Machine channels and several Redux slices are large and carry hardcoded per-machine branches.
 - Tape covers Marlin replies, the serial sender, SVG paint resolution (`test/svgParser.js`), and a few utilities. `gcodeParser.js` has no direct tests. A laser vector SVG can keep a color palette. Import asks whether to process each color or keep one object. Process-each-color writes one SVG object per swatch from the original file so the normal multi-object toolpath path can run.

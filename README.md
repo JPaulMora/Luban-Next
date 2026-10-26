@@ -1,7 +1,7 @@
 Luban Next
 ==========
 
-[Luban Next](https://github.com/JPaulMora/Luban-Next) is a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban). The current version is 4.17.0.
+[Luban Next](https://github.com/JPaulMora/Luban-Next) is a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban). The current version is 4.17.1.
 
 ## New features vs Luban
 
@@ -27,6 +27,18 @@ That is about six times faster to the home screen.
 ### Toolchain
 
 React 18, Webpack 5, and native-module rebuilds that run on Python 3.12+.
+
+## Changelog
+
+### 4.17.1
+
+- Opening a project file from Finder loads that file when the app starts.
+- Opening a recent project right after launch shows the job on the first try.
+
+### 4.17.0
+
+- Laser SVG colors: process each color, or import as one object.
+- Home screen startup is much faster than 4.15.0.
 
 ---
 

@@ -75,7 +75,7 @@ jobs:
             - name: Release on Github
               uses: softprops/action-gh-release@v1
               with:
-                  tag_name: ${{ github.event.release.tag_name || 'v4.17.0' }}
+                  tag_name: ${{ github.event.release.tag_name || 'v4.17.1' }}
                   files: |
                       ./output/*.exe
                       ./output/latest.yml
@@ -120,7 +120,7 @@ jobs:
               uses: softprops/action-gh-release@v1
               with:
                   # Keep the Apple Silicon latest-mac.yml already on the release.
-                  tag_name: ${{ github.event.release.tag_name || 'v4.17.0' }}
+                  tag_name: ${{ github.event.release.tag_name || 'v4.17.1' }}
                   files: |
                       ./output/*.zip
                       ./output/*.dmg
@@ -181,7 +181,7 @@ jobs:
             - name: Release on Github
               uses: softprops/action-gh-release@v1
               with:
-                  tag_name: ${{ github.event.release.tag_name || 'v4.17.0' }}
+                  tag_name: ${{ github.event.release.tag_name || 'v4.17.1' }}
                   files: |
                       ./output/*.deb
                       ./output/*.rpm
