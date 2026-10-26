@@ -9,7 +9,9 @@ import { actions as cncActions } from '../../../flux/cnc';
 import { actions as editorActions } from '../../../flux/editor';
 import { actions as machineActions } from '../../../flux/machine';
 import { actions as projectActions } from '../../../flux/project';
+import { notifyEditorReady } from '../../../lib/editor-ready';
 import i18n from '../../../lib/i18n';
+import log from '../../../lib/log';
 import modal from '../../../lib/modal';
 import { getUploadModeByFilename } from '../../../lib/units';
 import {
@@ -115,8 +117,9 @@ function useRenderWarning() {
 
 interface CNCMainPageProps {
     location: {
-        state: {
+        state?: {
             shouldShowGuideTours?: boolean;
+            editorOpenToken?: string;
         };
     };
 }
@@ -142,13 +145,32 @@ const Cnc: React.FC<CNCMainPageProps> = ({ location }) => {
     useUnsavedTitle(pageHeadType);
     const thumbnail = useRef();
     const series = useSelector(state => state.machine.series, shallowEqual);
+    const pageInitRef = useRef<Promise<void> | null>(null);
+    const editorOpenToken = location?.state?.editorOpenToken;
     useEffect(() => {
-        dispatch(cncActions.init());
-        logPageView({
-            pathname: '/cnc',
-            isRotate: materials?.isRotate
+        if (!pageInitRef.current) {
+            const rotateOnEnter = materials?.isRotate;
+            pageInitRef.current = (async () => {
+                await dispatch(cncActions.init());
+                logPageView({
+                    pathname: '/cnc',
+                    isRotate: rotateOnEnter
+                });
+            })().catch((err) => {
+                log.error(err);
+            });
+        }
+        const pageInit = pageInitRef.current;
+        let cancelled = false;
+        pageInit.finally(() => {
+            if (!cancelled) {
+                notifyEditorReady(HEAD_CNC, editorOpenToken);
+            }
         });
-    }, []);
+        return () => {
+            cancelled = true;
+        };
+    }, [dispatch, editorOpenToken, materials?.isRotate]);
 
     useEffect(() => {
         setIsRotate(!!location?.state?.isRotate);

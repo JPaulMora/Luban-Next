@@ -24,6 +24,7 @@ import {
 import { CylinderWorkpieceReference, OriginType, RectangleWorkpieceReference, convertMaterialsToWorkpiece } from '../../constants/coordinate';
 import { HEAD_CNC, HEAD_LASER, HEAD_PRINTING, SINGLE_EXTRUDER_TOOLHEAD_FOR_SM2 } from '../../constants/machines';
 import { checkIsGCodeFile, checkIsSnapmakerProjectFile } from '../../lib/check-name';
+import { waitForEditorReady } from '../../lib/editor-ready';
 import { logModuleVisit } from '../../lib/gaEvent';
 import i18n from '../../lib/i18n';
 import log from '../../lib/log';
@@ -197,7 +198,7 @@ export const actions = {
     recoverModels: (promiseArray = [], modActions, models, envHeadType, isGuideTours = false) => (dispatch) => {
         for (let k = 0; k < models.length; k++) {
             const { headType, originalName, uploadName, modelName, config, sourceType, gcodeConfig,
-                sourceWidth, sourceHeight, mode, transformation, modelID, supportTag, extruderConfig, children, parentModelID } = models[k];
+                sourceWidth, sourceHeight, mode, transformation, modelID, supportTag, extruderConfig, children, parentModelID, processImageName } = models[k];
             const primeTowerTag = uploadName && uploadName.indexOf('prime_tower_') === 0;
             // prevent project recovery recorded into operation history
             if (supportTag) {
@@ -226,6 +227,7 @@ export const actions = {
                     isGroup: !!children,
                     parentModelID,
                     children,
+                    processImageName,
                     primeTowerTag,
                     isGuideTours
                 }))
@@ -362,6 +364,17 @@ export const actions = {
             }
         }
         models = bubbleSortByAttribute(models, ['transformation', 'positionZ']);
+
+        if (envHeadType === HEAD_CNC || envHeadType === HEAD_LASER) {
+            const waitStarted = Date.now();
+            while (!getState()[envHeadType].contentGroup && Date.now() - waitStarted < 5000) {
+                // The SVG canvas is created when the editor page mounts.
+                await new Promise((resolve) => setTimeout(resolve, 50));
+            }
+            if (!getState()[envHeadType].contentGroup) {
+                log.error(`Cannot recover ${envHeadType} project before the canvas is ready`);
+            }
+        }
 
         // Recover models
         // Compatible with mesh mode
@@ -620,15 +633,21 @@ export const actions = {
 
             await dispatch(actions.closeProject(oldHeadType));
             content && dispatch(actions.updateState(headType, { findLastEnvironment: false, content, unSaved: false }));
+            // Page init clears the scene. Wait until that finishes, then load
+            // models into the canvas that init just created.
+            const editorOpenToken = `${Date.now()}`;
+            const editorReady = waitForEditorReady(headType, editorOpenToken);
             if (oldHeadType === headType && !unReload) {
                 history.push('/');
             }
-            history.push(
-                {
-                    pathname: `/${headType}`,
-                    state: { initialized: true }
+            history.push({
+                pathname: `/${headType}`,
+                state: {
+                    initialized: true,
+                    editorOpenToken
                 }
-            );
+            });
+            await editorReady;
             await dispatch(actions.onRecovery(headType, envObj, false, shouldSetFileName, isGuideTours));
             if (shouldSetFileName) {
                 if (file instanceof File) {

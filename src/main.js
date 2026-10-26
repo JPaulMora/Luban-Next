@@ -10,7 +10,7 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, powerSaveBlocker, protocol, 
 import Store from 'electron-store';
 import { autoUpdater } from 'electron-updater';
 import fs from 'fs';
-import { debounce, isNull, isUndefined } from 'lodash';
+import { debounce } from 'lodash';
 import log from 'loglevel';
 import fetch from 'node-fetch';
 import path from 'path';
@@ -40,13 +40,121 @@ Sentry.init({
 log.setLevel(log.levels.INFO);
 
 const config = new Store();
+let serverData = null;
+let mainWindow = null;
+let loadUrl = '';
+let pendingProjectFile = null;
+let rendererReadyForProjectFile = false;
+let lastDeliveredProjectPath = '';
+let lastDeliveredProjectAt = 0;
+
+const PROJECT_LAUNCH_EXT = /\.(snaplzr|snap3dp|snapcnc|gcode|nc|cnc)$/i;
+const DUPLICATE_LAUNCH_MS = 15000;
+
+function projectFileFromLaunchArg(filePath) {
+    if (!filePath) {
+        return null;
+    }
+    if (typeof filePath === 'object') {
+        return projectFileFromLaunchArg(filePath.path);
+    }
+    if (typeof filePath !== 'string') {
+        return null;
+    }
+
+    let candidate = filePath.trim();
+    if (!candidate || candidate.startsWith('-')) {
+        return null;
+    }
+    if (candidate.startsWith('file://')) {
+        try {
+            candidate = decodeURI(candidate.slice('file://'.length));
+            if (candidate.startsWith('localhost')) {
+                candidate = candidate.slice('localhost'.length);
+            }
+            if (/^\/[A-Za-z]:/.test(candidate)) {
+                candidate = candidate.slice(1);
+            }
+        } catch (e) {
+            return null;
+        }
+    }
+    if (!PROJECT_LAUNCH_EXT.test(candidate)) {
+        return null;
+    }
+    return {
+        path: candidate,
+        name: path.basename(candidate)
+    };
+}
+
+function canDeliverProjectFile() {
+    return rendererReadyForProjectFile
+        && mainWindow
+        && !mainWindow.isDestroyed()
+        && mainWindow.webContents
+        && !mainWindow.webContents.isDestroyed();
+}
+
+function noteDeliveredProjectFile(projectFile) {
+    lastDeliveredProjectPath = projectFile.path;
+    lastDeliveredProjectAt = Date.now();
+}
+
+function rememberProjectFile(filePath) {
+    const projectFile = projectFileFromLaunchArg(filePath);
+    if (!projectFile) {
+        return;
+    }
+    if (
+        projectFile.path === lastDeliveredProjectPath
+        && Date.now() - lastDeliveredProjectAt < DUPLICATE_LAUNCH_MS
+    ) {
+        return;
+    }
+    // The renderer listens only after it has mounted. Until then, keep the
+    // path; sending now would hit the loading page and the file would be lost.
+    if (canDeliverProjectFile()) {
+        noteDeliveredProjectFile(projectFile);
+        mainWindow.webContents.send('open-file', projectFile);
+        return;
+    }
+    pendingProjectFile = projectFile;
+    config.set('projectFile', projectFile);
+}
+
+function takeProjectFile() {
+    const projectFile = pendingProjectFile || projectFileFromLaunchArg(config.get('projectFile'));
+    pendingProjectFile = null;
+    if (config.get('projectFile')) {
+        config.set('projectFile', null);
+    }
+    if (projectFile) {
+        noteDeliveredProjectFile(projectFile);
+    }
+    return projectFile || null;
+}
+
+// Drop a project path left behind by a previous launch. A file opened with
+// this process is recorded again by the listeners below. Register before
+// app.getPath / requestSingleInstanceLock, which can pump the macOS open-file
+// event. A listener attached later never sees it.
+config.set('projectFile', null);
+app.on('open-file', (event, projectFile) => {
+    event.preventDefault();
+    rememberProjectFile(projectFile);
+});
+ipcMain.handle('popFile', () => {
+    const projectFile = takeProjectFile();
+    rendererReadyForProjectFile = true;
+    return projectFile;
+});
+
 const userDataDir = app.getPath('userData');
 global.luban = {
     userDataDir
 };
-let serverData = null;
-let mainWindow = null;
-let loadUrl = '';
+
 let powerId = 0;
 const loadingMenu = [{
     id: 'file',
@@ -256,20 +364,9 @@ if (!gotTheLock) {
     process.exit(0);
 }
 
-// Open the project file when the app is not started on the windows platform
-if (process.platform === 'win32') {
-    // 'projectFileOnWindow' represents the directory of project files
-    const projectFileOnWindow = String(process.argv[process.argv.length - 1]);
-    const newProjectFile = {
-        path: projectFileOnWindow,
-        name: path.basename(projectFileOnWindow)
-    };
-    if (mainWindow) {
-        mainWindow.webContents.send('open-file', newProjectFile);
-    } else {
-        config.set('projectFile', newProjectFile);
-    }
-}
+process.argv.forEach((arg) => {
+    rememberProjectFile(arg);
+});
 
 const startToBegin = (data) => {
     serverData = data;
@@ -434,6 +531,7 @@ const showMainWindow = async () => {
         config.set('winBounds', options);
         window.webContents.send('save-and-close');
 
+        rendererReadyForProjectFile = false;
         mainWindow = null;
     });
 
@@ -446,16 +544,6 @@ const showMainWindow = async () => {
         const fileArr = menuBuilder.getInitRecentFile();
         window.webContents.send('update-recent-file', fileArr, 'update');
     });
-    // the "open file or folder" dialog can also be triggered from the React app
-    ipcMain.handle('popFile', () => {
-        const newProjectFile = config.get('projectFile');
-        if (!isUndefined(newProjectFile) && !isNull(newProjectFile)) {
-            config.set('projectFile', null);
-            return newProjectFile;
-        }
-        return null;
-    });
-
     ipcMain.on('clean-all-recent-files', () => {
         cleanAllRecentFiles();
     });
@@ -679,28 +767,6 @@ app.on('activate', async () => {
 });
 
 /**
- * Only for MacOS
- *
- * Listening to the open file event (when through the OS by double click or similar)
- */
-app.on('open-file', (event, projectFile) => {
-    let newProjectFile;
-    if (typeof projectFile === 'string') {
-        newProjectFile = {
-            path: projectFile,
-            name: path.basename(projectFile)
-        };
-    }
-    event.preventDefault();
-    // if the app is ready and initialized, we open this file
-    if (mainWindow && newProjectFile) {
-        mainWindow.webContents.send('open-file', newProjectFile);
-    } else {
-        config.set('projectFile', newProjectFile);
-    }
-});
-
-/**
  * Emitted when all windows have been closed.
  *
  * Not emitted when user pressed Cmd + Q.
@@ -724,20 +790,17 @@ app.on('will-quit', () => {
     DataStorage.clear();
 });
 
-// Open the project file when the app is started on the windows platform
+// A second launch (Windows file association, or another process) should
+// focus this instance and open the project it was given.
 app.on('second-instance', (event, commandLine) => {
-    // Someone tried to run a second instance, we should focus our window.
-    if (event && process.platform === 'win32') {
-        if (mainWindow) {
-            if (mainWindow.isMinimized()) mainWindow.restore();
-            mainWindow.focus();
-            const projectFilePath = commandLine[commandLine.length - 1];
-            const newProjectFile = {
-                path: projectFilePath,
-                name: path.basename(projectFilePath)
-            };
-            mainWindow.webContents.send('open-file', newProjectFile);
-        }
+    if (mainWindow) {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
+    }
+    if (Array.isArray(commandLine)) {
+        commandLine.forEach((arg) => {
+            rememberProjectFile(arg);
+        });
     }
 });
 protocol.registerSchemesAsPrivileged([{ scheme: 'luban', privileges: { standard: true, corsEnabled: true } }]);

@@ -13,7 +13,9 @@ import { actions as machineActions } from '../../../flux/machine';
 import { actions as printingActions } from '../../../flux/printing';
 import sceneActions from '../../../flux/printing/actions-scene';
 import { actions as projectActions } from '../../../flux/project';
+import { notifyEditorReady } from '../../../lib/editor-ready';
 import i18n from '../../../lib/i18n';
+import log from '../../../lib/log';
 import modal from '../../../lib/modal';
 import sceneLogic from '../../../scene/scene.logic';
 import { machineStore } from '../../../store/local-storage';
@@ -450,39 +452,64 @@ const Printing: React.FC<PrintMainPageProps> = ({ location }) => {
     const thumbnail = useRef();
     useUnsavedTitle(pageHeadType);
 
+    const pageInitRef = useRef<Promise<void> | null>(null);
+    const editorOpenToken = location?.state?.editorOpenToken;
     useEffect(() => {
-        (async () => {
-            if (!location?.state?.initialized || qualityDefinitions.length <= 0) {
-                setIsInitLoading(true);
-                await dispatch(printingActions.init());
-                setIsInitLoading(false);
+        if (!pageInitRef.current) {
+            const shouldInit = !location?.state?.initialized || qualityDefinitions.length <= 0;
+            const needOpenModel = location?.state?.needOpenModel;
+            const fileName = location?.state?.fileName;
+            const savePath = location?.state?.savePath;
+            pageInitRef.current = (async () => {
+                if (shouldInit) {
+                    setIsInitLoading(true);
+                    await dispatch(printingActions.init());
+                    setIsInitLoading(false);
+                }
+                // for download manager open model
+                if (needOpenModel) {
+                    dispatch(
+                        printingActions.uploadModel(
+                            [
+                                JSON.stringify({
+                                    name: fileName,
+                                    path: savePath || '',
+                                })
+                            ],
+                        )
+                    );
+                }
+                // Make sure execute 'initSocketEvent' after 'printingActions.init' on openning project
+                setTimeout(async () => {
+                    await dispatch(printingActions.initSocketEvent());
+                }, 50);
+                dispatch(printingActions.checkNewUser());
+                logPageView({
+                    pathname: '/printing'
+                });
+            })().catch((err) => {
+                log.error(err);
+            });
+        }
+        const pageInit = pageInitRef.current;
+        let cancelled = false;
+        pageInit.finally(() => {
+            if (!cancelled) {
+                notifyEditorReady(HEAD_PRINTING, editorOpenToken);
             }
-            // for download manager open model
-            if (location?.state?.needOpenModel) {
-                const { fileName, savePath } = location.state;
-                dispatch(
-                    printingActions.uploadModel(
-                        [
-                            JSON.stringify({
-                                name: fileName,
-                                path: savePath || '',
-                            })
-                        ],
-                    )
-                );
-            }
-        })();
-
-        // Make sure execute 'initSocketEvent' after 'printingActions.init' on openning project
-        setTimeout(async () => {
-            await dispatch(printingActions.initSocketEvent());
-        }, 50);
-        dispatch(printingActions.checkNewUser());
-
-        logPageView({
-            pathname: '/printing'
         });
-    }, []);
+        return () => {
+            cancelled = true;
+        };
+    }, [
+        dispatch,
+        editorOpenToken,
+        location?.state?.fileName,
+        location?.state?.initialized,
+        location?.state?.needOpenModel,
+        location?.state?.savePath,
+        qualityDefinitions.length
+    ]);
 
     useEffect(() => {
         const material = {

@@ -8,7 +8,9 @@ import { HEAD_LASER, PROCESS_MODE_GREYSCALE, PROCESS_MODE_VECTOR } from '../../.
 import { actions as editorActions } from '../../../flux/editor';
 import { RootState } from '../../../flux/index.def';
 import { actions as laserActions } from '../../../flux/laser';
+import { notifyEditorReady } from '../../../lib/editor-ready';
 import i18n from '../../../lib/i18n';
+import log from '../../../lib/log';
 import modal from '../../../lib/modal';
 import { machineStore } from '../../../store/local-storage';
 import Dropzone from '../../components/Dropzone';
@@ -35,8 +37,9 @@ const pageHeadType = HEAD_LASER;
 
 interface LaserMainPageProps {
     location: {
-        state: {
+        state?: {
             shouldShowGuideTours?: boolean;
+            editorOpenToken?: string;
         };
     };
 }
@@ -74,17 +77,35 @@ const LaserMainPage: React.FC<LaserMainPageProps> = ({ location }) => {
     const dispatch = useDispatch();
 
     const thumbnail = useRef();
+    const pageInitRef = useRef<Promise<void> | null>(null);
+    const editorOpenToken = location?.state?.editorOpenToken;
 
     useEffect(() => {
-        setShowMaterialTest(false);
-        dispatch(laserActions.init());
-        // MaterialTestConfigurations show after laserActions init
-        setShowMaterialTest(true);
-        logPageView({
-            pathname: '/laser',
+        if (!pageInitRef.current) {
+            pageInitRef.current = (async () => {
+                setShowMaterialTest(false);
+                await dispatch(laserActions.init());
+                // MaterialTestConfigurations show after laserActions init
+                setShowMaterialTest(true);
+                logPageView({
+                    pathname: '/laser',
+                });
+                dispatch(laserActions.clearAB());
+            })().catch((err) => {
+                log.error(err);
+            });
+        }
+        const pageInit = pageInitRef.current;
+        let cancelled = false;
+        pageInit.finally(() => {
+            if (!cancelled) {
+                notifyEditorReady(HEAD_LASER, editorOpenToken);
+            }
         });
-        dispatch(laserActions.clearAB());
-    }, []);
+        return () => {
+            cancelled = true;
+        };
+    }, [dispatch, editorOpenToken]);
 
     useEffect(() => {
         setIsRotate(!!location?.state?.isRotate);
