@@ -3,7 +3,7 @@ name: Build on Release created
 on:
     release:
         types:
-            - created
+            - published
     workflow_dispatch:
         inputs:
             target:
@@ -34,6 +34,8 @@ jobs:
 
             - name: Checkout Code
               uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.release.tag_name || github.sha }}
 
             - name: Checkout submodules
               shell: bash
@@ -89,6 +91,8 @@ jobs:
         steps:
             - name: Checkout Code
               uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.release.tag_name || github.sha }}
 
             - name: Checkout submodules
               run: |
@@ -136,6 +140,8 @@ jobs:
         steps:
             - name: Checkout Code
               uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.release.tag_name || github.sha }}
 
             - name: Checkout submodules
               run: |
