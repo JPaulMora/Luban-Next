@@ -1,7 +1,7 @@
 Luban Next
 ==========
 
-[Luban Next](https://github.com/JPaulMora/Luban-Next) is a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban). The current version is 4.17.2.
+[Luban Next](https://github.com/JPaulMora/Luban-Next) is a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban). The current version is 4.17.3.
 
 ## New features vs Luban
 
@@ -24,26 +24,13 @@ On one Mac, timed on 24 October 2026, the clock ran from process start until the
 
 That is about six times faster to the home screen.
 
+### Laser material tests
+
+Set the gap between the boxes. Each box and label keeps its own toolpath, so the G-code cuts the grid.
+
 ### Toolchain
 
 React 18, Webpack 5, and native-module rebuilds that run on Python 3.12+.
-
-## Changelog
-
-### 4.17.2
-
-- Laser material tests can set the spacing between boxes.
-- A failed laser or CNC toolpath reports an error instead of leaving the preview stuck.
-
-### 4.17.1
-
-- Opening a project file from Finder loads that file when the app starts.
-- Opening a recent project right after launch shows the job on the first try.
-
-### 4.17.0
-
-- Laser SVG colors: process each color, or import as one object.
-- Home screen startup is much faster than 4.15.0.
 
 ---
 
