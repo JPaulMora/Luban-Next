@@ -1803,6 +1803,12 @@ export const actions = {
         dispatch(actions.resetProcessState(headType));
         const { progressStatesManager, modelGroup, SVGActions, toolPathGroup, coordinateMode, coordinateSize, materials } = getState()[headType];
         const { rectRows, speedMin, speedMax, rectHeight, rectCols, powerMin, powerMax, rectWidth } = params;
+        const gapFrom = (value: unknown) => {
+            const gap = Number(value);
+            return Number.isFinite(gap) && gap >= 0 ? gap : 6;
+        };
+        const rectRowGap = gapFrom(params.rectRowGap);
+        const rectColGap = gapFrom(params.rectColGap);
         const origin: Origin = getState()[headType].origin;
 
         if (!progressStatesManager.inProgress()) {
@@ -1827,7 +1833,6 @@ export const actions = {
             );
         };
 
-        const rectGap = 6;
         const titleGap = 2;
         // headTitleGap just use between head title and rects
         const headTitleGap = 4;
@@ -1852,8 +1857,12 @@ export const actions = {
             baseStyle.numFontSize = 8.6;
             baseStyle.maxWidth = 23.6;
         }
-        const maxWidth = rectCols * (rectWidth + rectGap) - rectGap + titleGap * 2 + baseStyle.numHeight + baseStyle.titleHeight + (rectWidth > 3 ? 0 : 1);
-        const maxHeight = rectRows * (rectHeight + rectGap) - rectGap + headTitleGap + (titleGap + baseStyle.titleHeight) * 2 + baseStyle.numHeight;
+        const maxWidth = (rectCols * (rectWidth + rectColGap) - rectColGap)
+            + (titleGap * 2)
+            + baseStyle.numHeight
+            + baseStyle.titleHeight
+            + (rectWidth > 3 ? 0 : 1);
+        const maxHeight = rectRows * (rectHeight + rectRowGap) - rectRowGap + headTitleGap + (titleGap + baseStyle.titleHeight) * 2 + baseStyle.numHeight;
         progress(0.05);
         // 越界判断
         if (maxWidth > Math.max(coordinateSize.x, baseStyle.maxWidth) || maxHeight > coordinateSize.y) {
@@ -1948,10 +1957,10 @@ export const actions = {
         const basicX = baseStyle.titleHeight + baseStyle.numHeight + titleGap * 2;
         const basicY = -(baseStyle.titleHeight + baseStyle.numHeight + titleGap * 2);
         for (let i = 0; i < rectCols; i++) {
-            const x = basicX + i * (rectWidth + rectGap);
+            const x = basicX + i * (rectWidth + rectColGap);
             const curPower = Math.round(powerMin + i * toolPathBase.power);
             for (let j = 0; j < rectRows; j++) {
-                const y = basicY - j * (rectGap + rectHeight);
+                const y = basicY - j * (rectRowGap + rectHeight);
                 const curSpeed = Math.round(speedMin + j * toolPathBase.speed);
                 if (i === 0) {
                     await createTextElement(`${curSpeed}`, x - (titleGap + baseStyle.numHeight / 2), y - rectHeight / 2, baseStyle.numHeight, baseStyle.numFontSize, true);

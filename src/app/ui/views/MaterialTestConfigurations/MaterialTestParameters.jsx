@@ -107,6 +107,12 @@ class MaterialTestParameters extends PureComponent {
                 label: i18n._('key_ui-views-MaterialTestModal-FormComponent-height'),
                 component: <InputNumber controls={false} className={formStyles.input} min={2} max={12} name="rectHeight" />
             },
+            {
+                name: 'rectRowGap',
+                suffix: 'mm',
+                label: i18n._('key_ui-views-MaterialTestModal-FormComponent-spacing'),
+                component: <InputNumber controls={false} className={formStyles.input} min={0} max={100} name="rectRowGap" />
+            },
         ];
         const powerFormItems = [
             { name: 'rectCols', label: i18n._('key_ui-views-MaterialTestModal-FormComponent-columnCount'), component: <InputNumber className={formStyles.input} min={1} max={11} name="rectCols" /> },
@@ -127,6 +133,12 @@ class MaterialTestParameters extends PureComponent {
                 suffix: 'mm',
                 label: i18n._('key_ui-views-MaterialTestModal-FormComponent-width'),
                 component: <InputNumber controls={false} className={formStyles.input} min={2} max={12} name="rectWidth" />
+            },
+            {
+                name: 'rectColGap',
+                suffix: 'mm',
+                label: i18n._('key_ui-views-MaterialTestModal-FormComponent-spacing'),
+                component: <InputNumber controls={false} className={formStyles.input} min={0} max={100} name="rectColGap" />
             },
         ];
         const zOffsetEnabled = activeMachine.metadata.size.z > 0;

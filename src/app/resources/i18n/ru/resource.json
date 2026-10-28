@@ -2439,5 +2439,6 @@
     "key_ui-views-MaterialTestModal-FormComponent-min": "Мин.",
     "key_ui-views-MaterialTestModal-FormComponent-max": "Макс.",
     "key_ui-views-MaterialTestModal-FormComponent-height": "Высота",
-    "key_ui-views-MaterialTestModal-FormComponent-width": "Ширина"
+    "key_ui-views-MaterialTestModal-FormComponent-width": "Ширина",
+    "key_ui-views-MaterialTestModal-FormComponent-spacing": "Интервал"
 }

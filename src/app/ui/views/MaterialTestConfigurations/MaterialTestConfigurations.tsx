@@ -23,22 +23,29 @@ function getDefaultDefinition(toolDefinitions = []) {
     return toolDefinitions.find(d => d?.definitionId === 'material_test.default_engraving');
 }
 
+const DEFAULT_FORM_DATA = {
+    rectRows: 5,
+    speedMin: 600,
+    speedMax: 7200,
+    rectHeight: 5,
+    rectRowGap: 6,
+    rectCols: 5,
+    powerMin: 10,
+    powerMax: 100,
+    rectWidth: 5,
+    rectColGap: 6,
+};
+
 function getDefaultFormData() {
     const storeData = editorStore.get(`${HEAD_LASER}LastMaterialTest`);
-    if (storeData) {
-        return Object.fromEntries(Object.entries(JSON.parse(storeData)).map(([key, value]) => [key, Number(value)]));
-    } else {
-        return {
-            rectRows: 5,
-            speedMin: 600,
-            speedMax: 7200,
-            rectHeight: 5,
-            rectCols: 5,
-            powerMin: 10,
-            powerMax: 100,
-            rectWidth: 5,
-        };
+    if (!storeData) {
+        return { ...DEFAULT_FORM_DATA };
     }
+    const saved = Object.fromEntries(Object.entries(JSON.parse(storeData)).map(([key, value]) => [key, Number(value)]));
+    return {
+        ...DEFAULT_FORM_DATA,
+        ...Object.fromEntries(Object.entries(saved).filter(([, value]) => Number.isFinite(value))),
+    };
 }
 
 
@@ -263,7 +270,7 @@ const MaterialTestConfigurations: React.FC<MaterialTestConfigurationsProps> = ({
                     {i18n._('key-Laser/MainToolBar-MaterialTesting')}
                     {/* </Modal.Title> */}
                 </Modal.Header>
-                <Modal.Body style={{ height: '540px', width: '470px', overflow: 'initial' }}>
+                <Modal.Body style={{ height: '592px', width: '470px', overflow: 'initial' }}>
                     <MaterialTestParameters
                         setCurrentToolDefinition={(definition) => actions.setToolDefinitionAndRemember(definition)}
                         gcodeConfig={gcodeConfig}

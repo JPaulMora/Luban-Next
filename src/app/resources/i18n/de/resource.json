@@ -2439,5 +2439,6 @@
     "key_ui-views-MaterialTestModal-FormComponent-min": "Min.",
     "key_ui-views-MaterialTestModal-FormComponent-max": "Max.",
     "key_ui-views-MaterialTestModal-FormComponent-height": "Höhe",
-    "key_ui-views-MaterialTestModal-FormComponent-width": "Breite"
+    "key_ui-views-MaterialTestModal-FormComponent-width": "Breite",
+    "key_ui-views-MaterialTestModal-FormComponent-spacing": "Abstand"
 }

@@ -2436,5 +2436,6 @@
     "key_ui-views-MaterialTestModal-FormComponent-columnCount": "열 수",
     "key_ui-views-MaterialTestModal-FormComponent-speed": "속도",
     "key_ui-views-MaterialTestModal-FormComponent-power": "전력",
-    "key_ui-views-MaterialTestModal-FormComponent-min": "최소"
+    "key_ui-views-MaterialTestModal-FormComponent-min": "최소",
+    "key_ui-views-MaterialTestModal-FormComponent-spacing": "간격"
 }
