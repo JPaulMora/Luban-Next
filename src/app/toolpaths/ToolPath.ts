@@ -119,7 +119,76 @@ class ToolPath {
         this.checkoutToolPathStatus();
     }
 
+    private uploadNameOf(model): string {
+        if (!model) {
+            return '';
+        }
+        const fromResource = model.resource && model.resource.originalFile && model.resource.originalFile.name;
+        return fromResource || model.uploadName || '';
+    }
+
+    private sameModelIds(left: string[], right: string[]) {
+        return left.length === right.length && left.every((id) => right.includes(id));
+    }
+
+    // Saved material tests kept each toolpath's speed, but every id list pointed
+    // at the first label. baseName is the file that should be cut. A name like
+    // "Text 1-Text 9" is the whole label group.
+    private reconcileLinkedModels() {
+        const models = this.modelGroup && this.modelGroup.models;
+        if (!models || models.length === 0) {
+            return;
+        }
+
+        let ids = [];
+        const range = /^(.*) (\d+)-\1 (\d+)$/.exec(this.name || '');
+        if (range) {
+            const prefix = range[1];
+            const start = Number(range[2]);
+            const end = Number(range[3]);
+            for (let n = start; n <= end; n++) {
+                const model = models.find((item) => item.modelName === `${prefix} ${n}`);
+                if (model) {
+                    ids.push(model.modelID);
+                }
+            }
+            if (ids.length !== (end - start + 1)) {
+                ids = [];
+            }
+        }
+
+        if (ids.length === 0 && this.baseName) {
+            const named = models.find((item) => this.uploadNameOf(item) === this.baseName);
+            const linkedUploads = this.visibleModelIDs.map((id) => {
+                const model = models.find((item) => item.modelID === id);
+                return this.uploadNameOf(model);
+            });
+            if (named && !linkedUploads.includes(this.baseName)) {
+                ids = [named.modelID];
+            }
+        }
+
+        if (ids.length === 0 || this.sameModelIds(ids, this.visibleModelIDs)) {
+            return;
+        }
+
+        const next = new Map();
+        for (const id of ids) {
+            next.set(id, {
+                meshObj: null,
+                status: IDLE,
+                toolPathFile: null,
+            });
+        }
+        this.modelMap = next;
+        this.visibleModelIDs = ids;
+        if (this.status === SUCCESS) {
+            this.status = WARNING;
+        }
+    }
+
     public getState() {
+        this.reconcileLinkedModels();
         this.visibleModelIDs = this.modelGroup.models
             .filter((model) => {
                 return (
@@ -219,6 +288,7 @@ class ToolPath {
     }
 
     private _getModels(): SvgModel[] {
+        this.reconcileLinkedModels();
         const models = this.modelGroup.getModels<SvgModel>();
         return models.filter((model) => {
             return (
