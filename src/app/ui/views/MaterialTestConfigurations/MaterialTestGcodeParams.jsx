@@ -45,12 +45,15 @@ class MaterialTestGcodeParams extends PureComponent {
             allDefinition[key].isGcodeConfig = false;
         });
 
-        Object.entries(cloneDeep(activeToolDefinition?.settings)).forEach(([key, value]) => {
-            if (!allDefinition[toHump(key)]) {
-                allDefinition[toHump(key)] = {};
-            }
-            allDefinition[toHump(key)].default_value = value.default_value;
-        });
+        const toolSettings = activeToolDefinition && activeToolDefinition.settings;
+        if (toolSettings) {
+            Object.entries(cloneDeep(toolSettings)).forEach(([key, value]) => {
+                if (!allDefinition[toHump(key)]) {
+                    allDefinition[toHump(key)] = {};
+                }
+                allDefinition[toHump(key)].default_value = value.default_value;
+            });
+        }
 
         const pathType = allDefinition.pathType.default_value;
         const movementMode = allDefinition.movementMode.default_value;
@@ -77,7 +80,7 @@ class MaterialTestGcodeParams extends PureComponent {
             if (allDefinition[key]) {
                 laserDefinitionFill[key] = allDefinition[key];
             }
-            if (key === 'movementMode') {
+            if (key === 'movementMode' && laserDefinitionFill[key]) {
                 // Just Svg
                 laserDefinitionFill[key].options = {
                     'greyscale-line': 'Line',
