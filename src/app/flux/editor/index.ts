@@ -1920,8 +1920,10 @@ export const actions = {
         const backupModels = [];
         const backupToolPath = [];
         const createToolPath = (models, ws, fp) => {
-            modelGroup.selectedModelArray = models;
-            const toolPath = toolPathGroup.createToolPath({ materials, origin });
+            const toolPath = toolPathGroup.createToolPath({ materials, origin, models });
+            if (!toolPath) {
+                return;
+            }
             toolPath.name = models.length > 1 ? `${models[0].modelName}-${models[models.length - 1].modelName}` : models[0].modelName;
             toolPath.gcodeConfig = gcodeConfig;
             toolPath.toolParams = toolParams;
@@ -1933,7 +1935,6 @@ export const actions = {
                 toolPathGroup.saveToolPath(toolPath, { materials, origin }, false);
             }
             backupToolPath.push(toolPath);
-            modelGroup.selectedModelArray = [];
         };
         const createTextElement = async (text, x, y, h, fontSize, needRote) => {
             const curX = position.x + x;

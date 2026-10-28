@@ -158,9 +158,7 @@ class ToolPathGroup {
 
     public createToolPath(options) {
         const { materials, origin, colorFilter } = options;
-
-        // const models = this.modelGroup.getSelectedToolPathModels();
-        const models = this.modelGroup.getSelectedModelArray();
+        const models = options.models || this.modelGroup.getSelectedModelArray();
 
         if (models.length === 0) {
             return null;
@@ -176,14 +174,19 @@ class ToolPathGroup {
 
         const { gcodeConfig } = generateModelDefaultConfigs(this.headType, models[0].sourceType, models[0].mode, materials.isRotate);
 
+        // Snapshot before _updated(). That dispatch re-renders, and the selection
+        // read afterward can be a different model than the one just attached.
+        const visibleModelIDs = models.map((model) => model.modelID);
+        const baseName = models[0] instanceof ThreeModel ? models[0].uploadName : models[0].resource.originalFile.name;
+
         this._updated();
         const toolPathInfo = new ToolPath({
             name: createToolPathNameByType(this.count, type, this.headType),
-            baseName: models[0] instanceof ThreeModel ? models[0].uploadName : models[0].resource.originalFile.name,
+            baseName,
             modelMode: models[0].mode,
             headType: this.headType,
             type,
-            visibleModelIDs: this.modelGroup.selectedModelIDArray,
+            visibleModelIDs,
             modelGroup: this.modelGroup,
             gcodeConfig,
             colorFilter,
