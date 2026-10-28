@@ -130,6 +130,9 @@ class ProgressState {
 
     public getNewProgress(stageID: StageIDType, progress: number, count = 1, totalCount = 1) {
         const stage = this.stages.find(s => s.stageID === stageID);
+        if (!stage) {
+            return 0;
+        }
         let newProgress = stage.startPercent
             + (stage.percent - stage.startPercent) * (count - 1) / totalCount
             + progress * (stage.percent - stage.startPercent) / totalCount;
@@ -209,6 +212,9 @@ class ProgressStatesManager {
     public updateProgress(stageID: StageIDType, progress: number) {
         if (!this.processStageID && this.stagesProcessStageID[stageID]) {
             this.startProgress(this.stagesProcessStageID[stageID]);
+        }
+        if (!this.progressStates[this.processStageID]) {
+            return this.progress;
         }
 
         const totalCount = this.totalCounts && this.totalCounts[this.stage] || 1;

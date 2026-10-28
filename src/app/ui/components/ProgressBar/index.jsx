@@ -38,7 +38,10 @@ class ProgressBar extends React.PureComponent {
                 this.timeout = setTimeout(() => this.setState({ display: 'none' }), 800);
             }
         }
-        if (this.props.tips.includes(i18n._('key-Progress/3DP-Failed to load model.'))) {
+        if (typeof this.props.tips === 'string' && (
+            this.props.tips.includes(i18n._('key-Progress/3DP-Failed to load model.'))
+            || this.props.tips.includes(i18n._('key-Progress/LaserCNC-Failed to generate toolpath and preview.'))
+        )) {
             this.setState({ display: 'none' });
         }
         return prevProps;

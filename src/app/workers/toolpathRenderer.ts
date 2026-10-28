@@ -23,16 +23,19 @@ const toolpathRenderer = (taskResult: ToolpathRendererData) => {
 
         const { headType } = taskResult;
 
-        try {
+        const renderAll = async () => {
             const taskTotal = taskResult.data.length;
-            let taskCompleted = 0;
+            const filenames = Array.isArray(taskResult.filenames) ? taskResult.filenames : [];
+
             for (let i = 0; i < taskTotal; i++) {
-                const filename = taskResult.filenames[i];
+                const filename = filenames[i];
+                if (!filename) {
+                    throw new Error(`Missing toolpath file for index ${i}`);
+                }
 
                 console.log(`Generate geometry from tool path, ${filename}`);
                 const converter = new ToolPathGeometryConverter();
-
-                converter.parseAsync(
+                const renderResult = await converter.parseAsync(
                     filename,
                     (progress: number) => {
                         observer.next({
@@ -43,39 +46,37 @@ const toolpathRenderer = (taskResult: ToolpathRendererData) => {
                             }
                         });
                     },
-                    (renderResult) => {
-                        observer.next({
-                            status: 'data',
-                            headType: headType,
-                            value: {
-                                taskResult: taskResult,
-                                index: i,
-                                renderResult: renderResult,
-                            }
-                        });
-
-                        taskCompleted++;
-                        if (taskCompleted === taskTotal) {
-                            observer.next({
-                                status: 'succeed',
-                                headType: headType,
-                                value: {
-                                    taskResult: taskResult,
-                                }
-                            });
-                            observer.complete();
-                        }
-                    },
                 );
+
+                observer.next({
+                    status: 'data',
+                    headType: headType,
+                    value: {
+                        taskResult: taskResult,
+                        index: i,
+                        renderResult: renderResult,
+                    }
+                });
             }
-        } catch (err) {
+
+            observer.next({
+                status: 'succeed',
+                headType: headType,
+                value: {
+                    taskResult: taskResult,
+                }
+            });
+            observer.complete();
+        };
+
+        renderAll().catch((err) => {
             observer.next({
                 status: 'err',
                 headType: headType,
                 value: err,
             });
             observer.complete();
-        }
+        });
     });
 };
 

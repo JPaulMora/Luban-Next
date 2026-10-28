@@ -56,8 +56,15 @@ function slice(modelInfo, onProgress, onSucceed, onError) {
                 log.error(`LunarTPP slice error, Code: ${err.code} | Msg: ${err.msg}`);
                 onError();
             } else {
+                const filenames = data.map(v => v.toolpathFileName);
+                const missing = filenames.filter((name) => !name || !fs.existsSync(`${process.env.Tmpdir}/${name}`));
+                if (missing.length) {
+                    log.error(`LunarTPP slice produced no output: ${missing.join(', ')}`);
+                    onError();
+                    return;
+                }
                 onSucceed({
-                    filenames: data.map(v => v.toolpathFileName)
+                    filenames
                 });
                 log.info(`slice progress closed with code ${res.code}`);
             }

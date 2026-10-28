@@ -14,6 +14,7 @@ import {
     DISPLAYED_TYPE_MODEL,
     DISPLAYED_TYPE_TOOLPATH,
     HEAD_LASER,
+    LOAD_MODEL_FROM_OUTER,
     MAX_LASER_CNC_CANVAS_SCALE,
     MIN_LASER_CNC_CANVAS_SCALE,
     PAGE_EDITOR,
@@ -439,7 +440,10 @@ export const actions = {
                     progressStatesManager.startNextStep();
 
                     if (toolPath) {
-                        taskResult.filenames = toolPathTaskResult.filenames.find(d => d.taskId === taskResult.taskId)?.filenames;
+                        const filenameResults = Array.isArray(toolPathTaskResult.filenames)
+                            ? toolPathTaskResult.filenames
+                            : [];
+                        taskResult.filenames = filenameResults.find(d => d && d.taskId === taskResult.taskId)?.filenames;
                         // progressStatesManager.startNextStep();
                         const promise = new Promise<boolean>((resolve) => {
                             workerManager.toolpathRenderer(taskResult, (payload) => {
@@ -513,7 +517,30 @@ export const actions = {
                     }
                 });
 
-                await Promise.allSettled(toolPathRenderPromises);
+                const renderResults = await Promise.allSettled(toolPathRenderPromises);
+                const allRendered = renderResults.length > 0
+                    && renderResults.every(result => result.status === 'fulfilled' && result.value);
+                if (!progressStatesManager.inProgress()) {
+                    return;
+                }
+                if (!allRendered) {
+                    progressStatesManager.finishProgress(false);
+                    dispatch(
+                        baseActions.updateState(headType, {
+                            stage: STEP_STAGE.CNC_LASER_GENERATE_TOOLPATH_FAILED,
+                            progress: 1,
+                        })
+                    );
+                    return;
+                }
+                if (!toolPathGroup._getCheckAndSuccessToolPaths()) {
+                    progressStatesManager.finishProgress(true);
+                    dispatch(
+                        baseActions.updateState(headType, {
+                            progress: 1,
+                        })
+                    );
+                }
             });
 
             controller.on('taskCompleted:generateGcode', taskResult => {
@@ -907,7 +934,10 @@ export const actions = {
      */
     generateModel: (
         headType,
-        { originalName, uploadName, sourceWidth, sourceHeight, mode, sourceType, config, gcodeConfig, transformation, modelID, zIndex, isLimit }
+        {
+            originalName, uploadName, sourceWidth, sourceHeight, mode, sourceType,
+            config, gcodeConfig, transformation, modelID, zIndex, isLimit, loadFrom, processImageName
+        }
     ) => async (dispatch, getState) => {
         const { size, promptDamageModel } = getState().machine;
 
@@ -1026,6 +1056,7 @@ export const actions = {
             transformation,
             config,
             gcodeConfig,
+            processImageName,
             zIndex,
             isRotate: materials.isRotate,
             elem: contentGroup.addSVGElement({
@@ -1061,9 +1092,11 @@ export const actions = {
             dispatch(actions.prepareStlVisualizer(headType, model));
         }
 
-        // Process image right after created
-        // TODO processImage
-        dispatch(actions.processSelectedModel(headType));
+        // Recovered models already have a processed image in the project.
+        // Re-running it starts a second progress process that can stall preview.
+        if (loadFrom !== LOAD_MODEL_FROM_OUTER || !processImageName) {
+            dispatch(actions.processSelectedModel(headType));
+        }
         dispatch(
             actions.updateState(headType, {
                 stage: promptTasks.length ? STEP_STAGE.CNC_LASER_REPAIRING_MODEL : STEP_STAGE.EMPTY,
