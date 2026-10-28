@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { includes } from 'lodash';
 import { Checkbox } from 'antd';
 import { Button } from '../../../../components/Buttons';
+import { HEAD_TYPE_ENV_NAME } from '../../../../../constants';
 import {
     findMachineByName,
     findMachineModule,
@@ -299,6 +300,20 @@ const MachineSettings: React.FC = () => {
 
     // Save changes
     const onSave = useCallback(async () => {
+        const headType = getCurrentHeadType(window.location.href);
+        if (headType) {
+            const proceed = await dispatch(projectActions.save(headType, {
+                message: i18n._(
+                    'key-Project/Save-Save the changes you made in the {{headType}} G-code Generator? Your changes will be lost if you don’t save them.',
+                    { headType: i18n._(HEAD_TYPE_ENV_NAME[headType]) }
+                )
+            }));
+            if (!proceed) {
+                return;
+            }
+            await dispatch(projectActions.clearSavedEnvironment(headType));
+        }
+
         dispatch(workspaceActions.connect.setConnectionTimeout(state.connectionTimeout));
         dispatch(machineActions.updateMachineSeries(state.series));
         dispatch(machineActions.updateMachineSize(state.size));
@@ -311,11 +326,6 @@ const MachineSettings: React.FC = () => {
         }, state.series));
         dispatch(machineActions.setMachineModules(state.modules));
 
-        // save and redirect
-        const headType = getCurrentHeadType(window.location.href);
-        if (headType) {
-            await dispatch(projectActions.clearSavedEnvironment(headType));
-        }
         window.location.href = '/';
     }, [dispatch, state, printingToolHeadSelected, laserToolHeadSelected, cncToolHeadSelected]);
 

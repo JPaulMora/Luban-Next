@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory, withRouter } from 'react-router-dom';
 
-import { LEFT_EXTRUDER, PRINTING_MANAGER_TYPE_MATERIAL } from '../../../constants';
+import { HEAD_TYPE_ENV_NAME, LEFT_EXTRUDER, PRINTING_MANAGER_TYPE_MATERIAL } from '../../../constants';
 import { HEAD_PRINTING, isDualExtruder } from '../../../constants/machines';
 import { actions as appGlobalActions } from '../../../flux/app-global';
 import { RootState } from '../../../flux/index.def';
@@ -121,17 +121,32 @@ function useRenderMainToolBar(pageMode, setPageMode, profileInitialized = false)
 
     function renderMachineMaterialSettings() {
         const onClose = async () => {
-            setShowMachineMaterialSettings(false);
-            if (currentSeries !== seriesRef.current || currentToolhead !== toolHeadRef.current.printingToolhead) {
-                dispatch(machineActions.updateMachineSeries(currentSeries));
-                dispatch(machineActions.setZAxisModuleState(currentSeries === SnapmakerOriginalExtendedMachine.identifier));
-                dispatch(machineActions.updateMachineToolHead({
-                    ...toolHead,
-                    printingToolhead: currentToolhead
-                }, currentSeries));
-                await dispatch(projectActions.clearSavedEnvironment(HEAD_PRINTING));
-                window.location.href = '/';
+            const toolChanged = currentSeries !== seriesRef.current
+                || currentToolhead !== toolHeadRef.current.printingToolhead;
+            if (!toolChanged) {
+                setShowMachineMaterialSettings(false);
+                return;
             }
+
+            const proceed = await dispatch(projectActions.save(HEAD_PRINTING, {
+                message: i18n._(
+                    'key-Project/Save-Save the changes you made in the {{headType}} G-code Generator? Your changes will be lost if you don’t save them.',
+                    { headType: i18n._(HEAD_TYPE_ENV_NAME[HEAD_PRINTING]) }
+                )
+            }));
+            if (!proceed) {
+                return;
+            }
+
+            setShowMachineMaterialSettings(false);
+            dispatch(machineActions.updateMachineSeries(currentSeries));
+            dispatch(machineActions.setZAxisModuleState(currentSeries === SnapmakerOriginalExtendedMachine.identifier));
+            dispatch(machineActions.updateMachineToolHead({
+                ...toolHead,
+                printingToolhead: currentToolhead
+            }, currentSeries));
+            await dispatch(projectActions.clearSavedEnvironment(HEAD_PRINTING));
+            window.location.href = '/';
         };
         const onCallBack = (_series, _toolHead) => {
             setCurrentSeries(_series);
