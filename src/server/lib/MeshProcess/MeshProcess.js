@@ -10,6 +10,7 @@ import { pathWithRandomSuffix } from '../../../shared/lib/random-utils';
 import { round } from '../../../shared/lib/utils';
 import { Line } from '../../../shared/lib/math/Line';
 import { Slicer } from './Slicer';
+import { sliceLayerCount } from '../../../shared/lib/stackedModel';
 
 /**
  * Calculate whether a point is inside the triangle
@@ -161,14 +162,16 @@ export class MeshProcess {
         return this.mesh.getSize(this.isRotate);
     }
 
-    slice(thickness) {
-        const aabb = this.mesh.aabb;
+    slice(thickness, zStart = 0) {
+        const start = Math.max(0, Number(zStart) || 0);
+        const count = sliceLayerCount(this.mesh.aabb.length.z, thickness, start);
+        if (count <= 0) {
+            this.slicer = { slicerLayers: [] };
+            return this.slicer;
+        }
 
-        const layerThickness = thickness;
-        const initialLayerThickness = layerThickness / 2;
-        const imageHeight = Math.floor((aabb.length.z - initialLayerThickness) / layerThickness) + 1;
-
-        this.slicer = new Slicer(this.mesh, layerThickness, imageHeight, initialLayerThickness);
+        const initialLayerThickness = thickness / 2 + start;
+        this.slicer = new Slicer(this.mesh, thickness, count, initialLayerThickness);
 
         return this.slicer;
     }

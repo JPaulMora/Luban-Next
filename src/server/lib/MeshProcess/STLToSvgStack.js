@@ -8,6 +8,11 @@ import { MeshProcess } from './MeshProcess';
 import { pathWithRandomSuffix } from '../../../shared/lib/random-utils';
 import { svgToStringForCut } from '../../../shared/lib/SVGParser/SvgToString';
 import STLExporter from '../../../shared/lib/STL/STLExporter';
+import {
+    layerIsKept,
+    normalizeStackSettings,
+    upAxisCoordinate
+} from '../../../shared/lib/stackedModel';
 
 // eslint-disable-next-line no-unused-vars
 const NUMBERS = [
@@ -41,7 +46,8 @@ class STLToSvgStack {
 
     slice() {
         if (!this.slicer) {
-            this.meshProcess.mesh.addCoordinateSystem({ y: '-y' });
+            const settings = normalizeStackSettings(this.materials);
+            this.meshProcess.mesh.setCoordinateSystem(upAxisCoordinate(settings.upAxis));
 
             this.meshProcess.mesh.resize({
                 x: this.scale,
@@ -55,7 +61,15 @@ class STLToSvgStack {
                 z: -this.meshProcess.mesh.aabb.min.z
             });
 
-            this.slicer = this.meshProcess.slice(this.materials.thickness);
+            const lengthZ = this.meshProcess.mesh.aabb.length.z;
+            const zStart = Math.min(settings.modelOffset, Math.max(0, lengthZ));
+            this.slicer = this.meshProcess.slice(this.materials.thickness, zStart);
+            this.slicer.slicerLayers.forEach((layer, index) => {
+                layer.sourceIndex = index;
+            });
+            this.slicer.slicerLayers = this.slicer.slicerLayers.filter((layer, index) => {
+                return layerIsKept(index, settings.layersOn, settings.layersOff);
+            });
             this.aabb = {
                 max: {
                     ...this.meshProcess.mesh.aabb.max
@@ -94,7 +108,10 @@ class STLToSvgStack {
             height = boundingBoxY + 0.1;
         }
 
-        const digits = Math.ceil(Math.log10(slicer.slicerLayers.length));
+        const labelCount = slicer.slicerLayers.reduce((max, layer, index) => {
+            return Math.max(max, (layer.sourceIndex === undefined ? index : layer.sourceIndex) + 1);
+        }, 1);
+        const digits = Math.max(1, Math.floor(Math.log10(labelCount)) + 1);
         const countHeight = digits * 4 + 3;
         if (countHeight > height) {
             height = countHeight + 0.1;
@@ -178,7 +195,7 @@ class STLToSvgStack {
 
             // Set digits
             const numIndex = [];
-            let ii = i + 1;
+            let ii = (slicerLayer.sourceIndex === undefined ? i : slicerLayer.sourceIndex) + 1;
             while (ii > 0) {
                 numIndex.push(ii % 10);
                 ii = Math.floor(ii / 10);
