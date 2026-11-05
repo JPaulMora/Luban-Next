@@ -5,6 +5,7 @@ import path from 'path';
 import * as THREE from 'three';
 import { v4 as uuid } from 'uuid';
 
+import { normalizeStackSettings } from '../../../shared/lib/stackedModel';
 import { isEqual, round, whetherTransformed } from '../../../shared/lib/utils';
 import api from '../../api';
 import { controller } from '../../communication/socket-communication';
@@ -2875,8 +2876,9 @@ export const actions = {
         });
     },
 
-    generateModelStack: (headType, modelWidth, modelHeight, thickness, scale = 1) => (dispatch, getState) => {
+    generateModelStack: (headType, modelWidth, modelHeight, thickness, scale = 1, stackSettings = {}) => (dispatch, getState) => {
         const { materials, cutModelInfo, coordinateSize } = getState()[headType];
+        const stack = normalizeStackSettings(stackSettings);
         const options = {
             // modelID: 'id56746944-1822-4d80-a566-64614921906a',
             // modelName: cutModelInfo.originalName,
@@ -2899,7 +2901,11 @@ export const actions = {
                 ...materials,
                 width: coordinateSize.x,
                 height: coordinateSize.y,
-                thickness: thickness
+                thickness: thickness,
+                upAxis: stack.upAxis,
+                modelOffset: stack.modelOffset,
+                layersOn: stack.layersOn,
+                layersOff: stack.layersOff
             },
             // toolParams: {},
             modelCuttingSettings: {

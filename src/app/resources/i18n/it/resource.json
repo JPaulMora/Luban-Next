@@ -1914,11 +1914,17 @@
     "key-StackedModel/Import-Cancel": "Annulla",
     "key-StackedModel/Import-Import": "Importa",
     "key-StackedModel/Import-Layers": "Numero di strati",
+    "key-StackedModel/Import-Layers Off": "Strati saltati",
+    "key-StackedModel/Import-Layers On": "Strati inclusi",
+    "key-StackedModel/Import-Layers Pattern": "Taglia questo numero di strati, poi saltane altri. 1 e 1 alterna.",
     "key-StackedModel/Import-Loading": "Caricamento in corso...",
     "key-StackedModel/Import-Material Thickness": "Spessore materiale",
+    "key-StackedModel/Import-Model Offset": "Offset del modello",
+    "key-StackedModel/Import-Model Offset Hint": "Distanza da ignorare dalla base del modello.",
     "key-StackedModel/Import-Model Size": "Dimensioni del modello",
     "key-StackedModel/Import-Preview Stacked Model": "Anteprima modello impilato",
     "key-StackedModel/Import-Sheets": "Numero di fogli",
+    "key-StackedModel/Import-Up Axis": "Asse verso l'alto",
     "key-SvgShapeLibrary/All": "All",
     "key-SvgShapeLibrary/Category": "Category",
     "key-SvgShapeLibrary/Page-Back": "Back",
@@ -2440,5 +2446,7 @@
     "key_ui-views-MaterialTestModal-FormComponent-max": "Max.",
     "key_ui-views-MaterialTestModal-FormComponent-height": "Altezza",
     "key_ui-views-MaterialTestModal-FormComponent-width": "Larghezza",
-    "key_ui-views-MaterialTestModal-FormComponent-spacing": "Spaziatura"
+    "key_ui-views-MaterialTestModal-FormComponent-spacing": "Spaziatura",
+    "key_ui-views-MaterialTestModal-FormComponent-engrave": "Incidere",
+    "key_ui-views-MaterialTestModal-FormComponent-cut": "Tagliare"
 }

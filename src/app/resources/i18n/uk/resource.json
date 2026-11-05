@@ -1914,11 +1914,17 @@
     "key-StackedModel/Import-Cancel": "Скасувати",
     "key-StackedModel/Import-Import": "Імпорт",
     "key-StackedModel/Import-Layers": "Кількість шарів",
+    "key-StackedModel/Import-Layers Off": "Пропущені шари",
+    "key-StackedModel/Import-Layers On": "Включені шари",
+    "key-StackedModel/Import-Layers Pattern": "Стільки шарів різати, потім стільки пропустити. 1 і 1 чергує.",
     "key-StackedModel/Import-Loading": "Завантаження…",
     "key-StackedModel/Import-Material Thickness": "Товщина матеріалу",
+    "key-StackedModel/Import-Model Offset": "Зсув моделі",
+    "key-StackedModel/Import-Model Offset Hint": "Відстань від низу моделі, яку не різати.",
     "key-StackedModel/Import-Model Size": "Розмір моделі",
     "key-StackedModel/Import-Preview Stacked Model": "Перегляд складеної моделі",
     "key-StackedModel/Import-Sheets": "Кількість сторінок",
+    "key-StackedModel/Import-Up Axis": "Вісь вгору",
     "key-SvgShapeLibrary/All": "Всі",
     "key-SvgShapeLibrary/Category": "Категорія",
     "key-SvgShapeLibrary/Page-Back": "Назад",
@@ -2440,5 +2446,7 @@
     "key_ui-views-MaterialTestModal-FormComponent-max": "Макс.",
     "key_ui-views-MaterialTestModal-FormComponent-height": "Висота",
     "key_ui-views-MaterialTestModal-FormComponent-width": "Ширина",
-    "key_ui-views-MaterialTestModal-FormComponent-spacing": "Інтервал"
+    "key_ui-views-MaterialTestModal-FormComponent-spacing": "Інтервал",
+    "key_ui-views-MaterialTestModal-FormComponent-engrave": "Гравіювання",
+    "key_ui-views-MaterialTestModal-FormComponent-cut": "Різання"
 }

@@ -1914,11 +1914,17 @@
     "key-StackedModel/Import-Cancel": "취소",
     "key-StackedModel/Import-Import": "가져오기",
     "key-StackedModel/Import-Layers": "레이어 수",
+    "key-StackedModel/Import-Layers Off": "건너뛸 레이어",
+    "key-StackedModel/Import-Layers On": "출력 레이어",
+    "key-StackedModel/Import-Layers Pattern": "이 개수만큼 자르고 다음 개수는 건너뜁니다. 1과 1은 번갈아 자릅니다.",
     "key-StackedModel/Import-Loading": "불러오는 중...",
     "key-StackedModel/Import-Material Thickness": "재료 두께",
+    "key-StackedModel/Import-Model Offset": "모델 오프셋",
+    "key-StackedModel/Import-Model Offset Hint": "모델 아래에서 건너뛸 거리입니다.",
     "key-StackedModel/Import-Model Size": "모델 크기",
     "key-StackedModel/Import-Preview Stacked Model": "스택 모델 미리보기",
     "key-StackedModel/Import-Sheets": "시트 수",
+    "key-StackedModel/Import-Up Axis": "위쪽 축",
     "key-SvgShapeLibrary/All": "",
     "key-SvgShapeLibrary/Category": "",
     "key-SvgShapeLibrary/Page-Back": "",
@@ -2437,5 +2443,7 @@
     "key_ui-views-MaterialTestModal-FormComponent-speed": "속도",
     "key_ui-views-MaterialTestModal-FormComponent-power": "전력",
     "key_ui-views-MaterialTestModal-FormComponent-min": "최소",
-    "key_ui-views-MaterialTestModal-FormComponent-spacing": "간격"
+    "key_ui-views-MaterialTestModal-FormComponent-spacing": "간격",
+    "key_ui-views-MaterialTestModal-FormComponent-engrave": "조각",
+    "key_ui-views-MaterialTestModal-FormComponent-cut": "절단"
 }

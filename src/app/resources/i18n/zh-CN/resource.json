@@ -1914,11 +1914,17 @@
     "key-StackedModel/Import-Cancel": "取消",
     "key-StackedModel/Import-Import": "导入",
     "key-StackedModel/Import-Layers": "切片层数",
+    "key-StackedModel/Import-Layers Off": "跳过层数",
+    "key-StackedModel/Import-Layers On": "保留层数",
+    "key-StackedModel/Import-Layers Pattern": "先切割这些层，再跳过这些层。1 和 1 表示交替。",
     "key-StackedModel/Import-Loading": "加载中...",
     "key-StackedModel/Import-Material Thickness": "材料厚度",
+    "key-StackedModel/Import-Model Offset": "模型偏移",
+    "key-StackedModel/Import-Model Offset Hint": "从模型底部忽略的距离。",
     "key-StackedModel/Import-Model Size": "模型尺寸",
     "key-StackedModel/Import-Preview Stacked Model": "预览堆叠模型",
     "key-StackedModel/Import-Sheets": "材料片数",
+    "key-StackedModel/Import-Up Axis": "向上坐标",
     "key-SvgShapeLibrary/All": "所有",
     "key-SvgShapeLibrary/Category": "类别",
     "key-SvgShapeLibrary/Page-Back": "返回",
@@ -2440,5 +2446,7 @@
     "key_ui-views-MaterialTestModal-FormComponent-max": "最大值",
     "key_ui-views-MaterialTestModal-FormComponent-height": "高度",
     "key_ui-views-MaterialTestModal-FormComponent-width": "宽度",
-    "key_ui-views-MaterialTestModal-FormComponent-spacing": "间距"
+    "key_ui-views-MaterialTestModal-FormComponent-spacing": "间距",
+    "key_ui-views-MaterialTestModal-FormComponent-engrave": "雕刻",
+    "key_ui-views-MaterialTestModal-FormComponent-cut": "切割"
 }

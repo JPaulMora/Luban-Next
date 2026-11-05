@@ -1914,11 +1914,17 @@
     "key-StackedModel/Import-Cancel": "Abbrechen",
     "key-StackedModel/Import-Import": "Importieren",
     "key-StackedModel/Import-Layers": "Schichtenanzahl",
+    "key-StackedModel/Import-Layers Off": "Schichten aus",
+    "key-StackedModel/Import-Layers On": "Schichten an",
+    "key-StackedModel/Import-Layers Pattern": "So viele Schichten schneiden, dann so viele überspringen. 1 und 1 wechselt ab.",
     "key-StackedModel/Import-Loading": "Laden...",
     "key-StackedModel/Import-Material Thickness": "Materialdicke",
+    "key-StackedModel/Import-Model Offset": "Modellversatz",
+    "key-StackedModel/Import-Model Offset Hint": "Abstand, der vom unteren Ende des Modells übersprungen wird.",
     "key-StackedModel/Import-Model Size": "Modell-Größe",
     "key-StackedModel/Import-Preview Stacked Model": "Vorschau des gestapelten Modells",
     "key-StackedModel/Import-Sheets": "Anzahl der Lagen",
+    "key-StackedModel/Import-Up Axis": "Achse nach oben",
     "key-SvgShapeLibrary/All": "Alle",
     "key-SvgShapeLibrary/Category": "Kategorie",
     "key-SvgShapeLibrary/Page-Back": "Zurück",
@@ -2440,5 +2446,7 @@
     "key_ui-views-MaterialTestModal-FormComponent-max": "Max.",
     "key_ui-views-MaterialTestModal-FormComponent-height": "Höhe",
     "key_ui-views-MaterialTestModal-FormComponent-width": "Breite",
-    "key_ui-views-MaterialTestModal-FormComponent-spacing": "Abstand"
+    "key_ui-views-MaterialTestModal-FormComponent-spacing": "Abstand",
+    "key_ui-views-MaterialTestModal-FormComponent-engrave": "Gravieren",
+    "key_ui-views-MaterialTestModal-FormComponent-cut": "Schneiden"
 }

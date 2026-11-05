@@ -1914,11 +1914,17 @@
     "key-StackedModel/Import-Cancel": "Cancelar",
     "key-StackedModel/Import-Import": "Importar",
     "key-StackedModel/Import-Layers": "Número de capas",
+    "key-StackedModel/Import-Layers Off": "Capas omitidas",
+    "key-StackedModel/Import-Layers On": "Capas incluidas",
+    "key-StackedModel/Import-Layers Pattern": "Corta estas capas y luego omite estas. 1 y 1 alterna.",
     "key-StackedModel/Import-Loading": "Cargando...",
     "key-StackedModel/Import-Material Thickness": "Espesor del material",
+    "key-StackedModel/Import-Model Offset": "Desplazamiento del modelo",
+    "key-StackedModel/Import-Model Offset Hint": "Distancia que se omite desde la base del modelo.",
     "key-StackedModel/Import-Model Size": "Tamaño del modelo",
     "key-StackedModel/Import-Preview Stacked Model": "Vista previa del modelo apilado",
     "key-StackedModel/Import-Sheets": "Número de hojas",
+    "key-StackedModel/Import-Up Axis": "Eje hacia arriba",
     "key-SvgShapeLibrary/All": "",
     "key-SvgShapeLibrary/Category": "",
     "key-SvgShapeLibrary/Page-Back": "",
@@ -2440,5 +2446,7 @@
     "key_ui-views-MaterialTestModal-FormComponent-max": "Máx.",
     "key_ui-views-MaterialTestModal-FormComponent-height": "Altura",
     "key_ui-views-MaterialTestModal-FormComponent-width": "Ancho",
-    "key_ui-views-MaterialTestModal-FormComponent-spacing": "Espaciado"
+    "key_ui-views-MaterialTestModal-FormComponent-spacing": "Espaciado",
+    "key_ui-views-MaterialTestModal-FormComponent-engrave": "Grabar",
+    "key_ui-views-MaterialTestModal-FormComponent-cut": "Cortar"
 }

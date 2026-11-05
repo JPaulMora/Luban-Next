@@ -1914,11 +1914,17 @@
     "key-StackedModel/Import-Cancel": "キャンセル",
     "key-StackedModel/Import-Import": "インポート",
     "key-StackedModel/Import-Layers": "レイヤ数",
+    "key-StackedModel/Import-Layers Off": "スキップする層",
+    "key-StackedModel/Import-Layers On": "出力する層",
+    "key-StackedModel/Import-Layers Pattern": "この層数を切ってから、次の層数を飛ばします。1 と 1 で交互になります。",
     "key-StackedModel/Import-Loading": "ロード中...",
     "key-StackedModel/Import-Material Thickness": "材料厚み",
+    "key-StackedModel/Import-Model Offset": "モデルのオフセット",
+    "key-StackedModel/Import-Model Offset Hint": "モデルの底から無視する距離。",
     "key-StackedModel/Import-Model Size": "モデルサイズ",
     "key-StackedModel/Import-Preview Stacked Model": "スタックモデルのプレビュー",
     "key-StackedModel/Import-Sheets": "シート数",
+    "key-StackedModel/Import-Up Axis": "上方向の軸",
     "key-SvgShapeLibrary/All": "",
     "key-SvgShapeLibrary/Category": "",
     "key-SvgShapeLibrary/Page-Back": "",
@@ -2440,5 +2446,7 @@
     "key_ui-views-MaterialTestModal-FormComponent-max": "最大",
     "key_ui-views-MaterialTestModal-FormComponent-height": "高さ",
     "key_ui-views-MaterialTestModal-FormComponent-width": "幅",
-    "key_ui-views-MaterialTestModal-FormComponent-spacing": "間隔"
+    "key_ui-views-MaterialTestModal-FormComponent-spacing": "間隔",
+    "key_ui-views-MaterialTestModal-FormComponent-engrave": "彫刻",
+    "key_ui-views-MaterialTestModal-FormComponent-cut": "切断"
 }

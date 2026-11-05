@@ -1914,11 +1914,17 @@
     "key-StackedModel/Import-Cancel": "",
     "key-StackedModel/Import-Import": "",
     "key-StackedModel/Import-Layers": "",
+    "key-StackedModel/Import-Layers Off": "",
+    "key-StackedModel/Import-Layers On": "",
+    "key-StackedModel/Import-Layers Pattern": "",
     "key-StackedModel/Import-Loading": "",
     "key-StackedModel/Import-Material Thickness": "",
+    "key-StackedModel/Import-Model Offset": "",
+    "key-StackedModel/Import-Model Offset Hint": "",
     "key-StackedModel/Import-Model Size": "",
     "key-StackedModel/Import-Preview Stacked Model": "",
     "key-StackedModel/Import-Sheets": "",
+    "key-StackedModel/Import-Up Axis": "",
     "key-SvgShapeLibrary/All": "",
     "key-SvgShapeLibrary/Category": "",
     "key-SvgShapeLibrary/Page-Back": "",
@@ -2429,5 +2435,7 @@
     "key_menu_Unhide": "",
     "key_ui/widgets/CNCPath/CNCPath_Transformation": "",
     "manualModeDesc": "",
-    "key_ui-views-MaterialTestModal-FormComponent-spacing": "間距"
+    "key_ui-views-MaterialTestModal-FormComponent-spacing": "間距",
+    "key_ui-views-MaterialTestModal-FormComponent-engrave": "雕刻",
+    "key_ui-views-MaterialTestModal-FormComponent-cut": "切割"
 }

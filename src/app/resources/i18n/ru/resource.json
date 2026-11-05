@@ -1914,11 +1914,17 @@
     "key-StackedModel/Import-Cancel": "Cancel",
     "key-StackedModel/Import-Import": "Import",
     "key-StackedModel/Import-Layers": "Number of Layers",
+    "key-StackedModel/Import-Layers Off": "Пропущенные слои",
+    "key-StackedModel/Import-Layers On": "Включённые слои",
+    "key-StackedModel/Import-Layers Pattern": "Столько слоёв резать, затем столько пропустить. 1 и 1 чередует.",
     "key-StackedModel/Import-Loading": "Loading...",
     "key-StackedModel/Import-Material Thickness": "Material Thickness",
+    "key-StackedModel/Import-Model Offset": "Смещение модели",
+    "key-StackedModel/Import-Model Offset Hint": "Расстояние от низа модели, которое не режется.",
     "key-StackedModel/Import-Model Size": "Model Size",
     "key-StackedModel/Import-Preview Stacked Model": "Preview Stacked Model",
     "key-StackedModel/Import-Sheets": "Number of Sheets",
+    "key-StackedModel/Import-Up Axis": "Ось вверх",
     "key-SvgShapeLibrary/All": "",
     "key-SvgShapeLibrary/Category": "",
     "key-SvgShapeLibrary/Page-Back": "",
@@ -2440,5 +2446,7 @@
     "key_ui-views-MaterialTestModal-FormComponent-max": "Макс.",
     "key_ui-views-MaterialTestModal-FormComponent-height": "Высота",
     "key_ui-views-MaterialTestModal-FormComponent-width": "Ширина",
-    "key_ui-views-MaterialTestModal-FormComponent-spacing": "Интервал"
+    "key_ui-views-MaterialTestModal-FormComponent-spacing": "Интервал",
+    "key_ui-views-MaterialTestModal-FormComponent-engrave": "Гравировка",
+    "key_ui-views-MaterialTestModal-FormComponent-cut": "Резка"
 }
