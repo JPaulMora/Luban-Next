@@ -50,6 +50,37 @@ function boxStl(sx, sy, sz) {
     return `solid box\n${faces.map(([i, j, k]) => triangle(v[i], v[j], v[k])).join('')}endsolid box\n`;
 }
 
+function looseBaseStl(sx, sy, sz) {
+    const gap = 0.001;
+    const v = [
+        [0, 0, 0], [sx, 0, 0], [sx, sy, 0], [0, sy, 0],
+        [0, 0, sz], [sx, 0, sz], [sx, sy, sz], [0, sy, sz],
+        [0, 0, gap], [sx, 0, gap], [sx, sy, gap], [0, sy, gap]
+    ];
+    const faces = [
+        [8, 10, 9], [8, 11, 10],
+        [4, 5, 6], [4, 6, 7],
+        [0, 1, 5], [0, 5, 4],
+        [3, 6, 2], [3, 7, 6],
+        [0, 4, 7], [0, 7, 3],
+        [1, 2, 6], [1, 6, 5]
+    ];
+    return `solid box\n${faces.map(([i, j, k]) => triangle(v[i], v[j], v[k])).join('')}endsolid box\n`;
+}
+
+function polygonArea(layer) {
+    let area = 0;
+    layer.polygonsPart.forEach((polygon) => {
+        const points = polygon.path;
+        for (let i = 0; i < points.length; i++) {
+            const a = points[i];
+            const b = points[(i + 1) % points.length];
+            area += (a.x * b.y) - (b.x * a.y);
+        }
+    });
+    return Math.abs(area) / 2;
+}
+
 function cutBox(materials) {
     const uploadName = `box-${Date.now()}-${Math.random().toString(16).slice(2)}.stl`;
     fs.writeFileSync(path.join(tmpdir, uploadName), boxStl(10, 16, 8));
@@ -139,7 +170,37 @@ test('stacked model slice settings', (t) => {
     t.equal(xUp.stlFile.layers, 5);
     t.ok(Math.abs(xUp.stlFile.width - 8) < 0.01);
     t.ok(Math.abs(xUp.stlFile.height - 16) < 0.01);
+    xUp.stack.slicer.slicerLayers.forEach((layer) => {
+        t.equal(layer.polygonsPart.size(), 1);
+        t.ok(Math.abs(polygonArea(layer) - 128) < 0.1);
+    });
     removeOutputs(xUp.uploadName, xUp.svgFiles, xUp.stlFile);
+
+    // The base is a separate shell, so its edges are not welded to the walls.
+    // Each sheet must still be the full cross-section, including that base.
+    ['x', '-x', 'y', '-y', 'z', '-z'].forEach((upAxis) => {
+        const uploadName = `loose-${upAxis}-${Date.now()}.stl`;
+        fs.writeFileSync(path.join(tmpdir, uploadName), looseBaseStl(10, 16, 8));
+        const stack = new STLToSvgStack({
+            uploadName,
+            originalName: 'loose.stl',
+            scale: 1,
+            materials: {
+                width: 300,
+                height: 300,
+                thickness: 2,
+                upAxis
+            }
+        });
+        stack.slice();
+        const fullArea = { y: 80, '-y': 80, z: 160, '-z': 160 }[upAxis] || 128;
+        t.ok(stack.slicer.slicerLayers.length > 0, upAxis);
+        stack.slicer.slicerLayers.forEach((layer) => {
+            t.equal(layer.polygonsPart.size(), 1, `${upAxis} z=${layer.z}`);
+            t.ok(Math.abs(polygonArea(layer) - fullArea) < 1, `${upAxis} z=${layer.z} area`);
+        });
+        fs.unlinkSync(path.join(tmpdir, uploadName));
+    });
 
     const down = cutBox({ upAxis: '-z' });
     t.equal(down.stlFile.layers, 4);

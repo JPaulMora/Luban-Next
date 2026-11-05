@@ -64,10 +64,13 @@ class SlicerLayer {
 
         if (!segmentEndedAtEdge) {
             const faceToTry = slicerSegment.endOtherFaceIdx;
-            if (faceToTry === undefined) {
-                return -1;
+            // An edge with no single neighbor still meets the next triangle at this
+            // point. A flat base that is not welded to its walls is that case, and
+            // the side it becomes is only as long as the pieces that stayed connected.
+            if (typeof faceToTry === 'number') {
+                return this.tryFaceNextSegmentIdx(slicerSegment, faceToTry, startSegmentIdx);
             }
-            return this.tryFaceNextSegmentIdx(slicerSegment, faceToTry, startSegmentIdx);
+            return this.segmentIdxByEndpoint(slicerSegment, startSegmentIdx);
         } else {
             for (const connectedFace of segmentEndedAtEdge.c) {
                 const resultSegmentIdx = this.tryFaceNextSegmentIdx(slicerSegment, connectedFace, startSegmentIdx);
@@ -101,6 +104,31 @@ class SlicerLayer {
         }
 
         return -1;
+    }
+
+    segmentIdxByEndpoint(slicerSegment, startSegmentIdx) {
+        const limit2 = LARGEST_NEGLECTED_GAP_FIRST_PHASE * LARGEST_NEGLECTED_GAP_FIRST_PHASE;
+        let bestIdx = -1;
+        let bestDist2 = Infinity;
+        const end = slicerSegment.end;
+
+        for (let i = 0; i < this.slicerSegments.length; i++) {
+            const candidate = this.slicerSegments[i];
+            if (candidate === slicerSegment) {
+                continue;
+            }
+            if (i !== startSegmentIdx && candidate.addedToPolygon) {
+                continue;
+            }
+            const diff = Vector2.sub(end, candidate.start);
+            const dist2 = Vector2.length2(diff);
+            if (dist2 <= limit2 && dist2 < bestDist2) {
+                bestDist2 = dist2;
+                bestIdx = i;
+            }
+        }
+
+        return bestIdx;
     }
 
     createPolygonsPart() {
