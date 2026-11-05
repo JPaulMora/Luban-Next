@@ -85,8 +85,6 @@ const LaserMainPage: React.FC<LaserMainPageProps> = ({ location }) => {
             pageInitRef.current = (async () => {
                 setShowMaterialTest(false);
                 await dispatch(laserActions.init());
-                // MaterialTestConfigurations show after laserActions init
-                setShowMaterialTest(true);
                 logPageView({
                     pathname: '/laser',
                 });
