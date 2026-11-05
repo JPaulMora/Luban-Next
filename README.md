@@ -1,7 +1,7 @@
 Luban Next
 ==========
 
-[Luban Next](https://github.com/JPaulMora/Luban-Next) is a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban). The current version is 4.17.3.
+[Luban Next](https://github.com/JPaulMora/Luban-Next) is a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban). The current version is 4.17.4.
 
 ## New features vs Luban
 
@@ -28,9 +28,24 @@ That is about six times faster to the home screen.
 
 Set the gap between the boxes. Each box and label keeps its own toolpath, so the G-code cuts the grid.
 
+### Stacked models
+
+Choose which axis is up, skip a base, and cut a run of layers before skipping the next run. A base that is not welded to the walls still becomes a full-length side.
+
 ### Toolchain
 
 React 18, Webpack 5, and native-module rebuilds that run on Python 3.12+.
+
+## Changelog
+
+### 4.17.4
+
+- Laser stacked models can choose which axis is up, skip a base, and alternate cut and skipped layers.
+- A stacked model sliced off Z keeps a full-length side when the base is a separate shell.
+- A new laser job leaves the material test closed. Open it from the toolbar.
+- A saved material test keeps each box and its label on their own toolpath.
+- Changing the laser or tool asks to save before the window reloads.
+- Publishing a GitHub release starts the package build.
 
 ---
 
