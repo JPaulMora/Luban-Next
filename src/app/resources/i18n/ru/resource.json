@@ -1923,6 +1923,7 @@
     "key-StackedModel/Import-Model Offset Hint": "Расстояние от низа модели, которое не режется.",
     "key-StackedModel/Import-Model Size": "Model Size",
     "key-StackedModel/Import-Preview Stacked Model": "Preview Stacked Model",
+    "key-StackedModel/Import-Save 3D Model": "Сохранить 3D-модель",
     "key-StackedModel/Import-Sheets": "Number of Sheets",
     "key-StackedModel/Import-Up Axis": "Ось вверх",
     "key-SvgShapeLibrary/All": "",

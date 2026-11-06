@@ -1923,6 +1923,7 @@
     "key-StackedModel/Import-Model Offset Hint": "从模型底部忽略的距离。",
     "key-StackedModel/Import-Model Size": "模型尺寸",
     "key-StackedModel/Import-Preview Stacked Model": "预览堆叠模型",
+    "key-StackedModel/Import-Save 3D Model": "保存三维模型",
     "key-StackedModel/Import-Sheets": "材料片数",
     "key-StackedModel/Import-Up Axis": "向上坐标",
     "key-SvgShapeLibrary/All": "所有",

@@ -1923,6 +1923,7 @@
     "key-StackedModel/Import-Model Offset Hint": "モデルの底から無視する距離。",
     "key-StackedModel/Import-Model Size": "モデルサイズ",
     "key-StackedModel/Import-Preview Stacked Model": "スタックモデルのプレビュー",
+    "key-StackedModel/Import-Save 3D Model": "3Dモデルを保存",
     "key-StackedModel/Import-Sheets": "シート数",
     "key-StackedModel/Import-Up Axis": "上方向の軸",
     "key-SvgShapeLibrary/All": "",

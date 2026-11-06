@@ -42,6 +42,7 @@ React 18, Webpack 5, and native-module rebuilds that run on Python 3.12+.
 
 - Laser stacked models can choose which axis is up, skip a base, and alternate cut and skipped layers.
 - A stacked model sliced off Z keeps a full-length side when the base is a separate shell.
+- The stacked-model preview can save that layered model as an STL.
 - A new laser job leaves the material test closed. Open it from the toolbar.
 - A saved material test keeps each box and its label on their own toolpath.
 - Changing the laser or tool asks to save before the window reloads.

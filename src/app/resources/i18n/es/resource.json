@@ -1923,6 +1923,7 @@
     "key-StackedModel/Import-Model Offset Hint": "Distancia que se omite desde la base del modelo.",
     "key-StackedModel/Import-Model Size": "Tamaño del modelo",
     "key-StackedModel/Import-Preview Stacked Model": "Vista previa del modelo apilado",
+    "key-StackedModel/Import-Save 3D Model": "Guardar modelo 3D",
     "key-StackedModel/Import-Sheets": "Número de hojas",
     "key-StackedModel/Import-Up Axis": "Eje hacia arriba",
     "key-SvgShapeLibrary/All": "",

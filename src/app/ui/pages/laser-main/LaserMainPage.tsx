@@ -6,6 +6,7 @@ import { Machine } from '@snapmaker/luban-platform';
 
 import { HEAD_LASER, PROCESS_MODE_GREYSCALE, PROCESS_MODE_VECTOR } from '../../../constants';
 import { actions as editorActions } from '../../../flux/editor';
+import { actions as projectActions } from '../../../flux/project';
 import { RootState } from '../../../flux/index.def';
 import { actions as laserActions } from '../../../flux/laser';
 import { notifyEditorReady } from '../../../lib/editor-ready';
@@ -47,6 +48,7 @@ interface LaserMainPageProps {
 const LaserMainPage: React.FC<LaserMainPageProps> = ({ location }) => {
     const widgets = useSelector((state: RootState) => state?.widget[pageHeadType]?.default?.widgets, shallowEqual);
     const showImportStackedModelModal = useSelector(state => state[pageHeadType].showImportStackedModelModal, shallowEqual);
+    const cutModelInfo = useSelector(state => state[pageHeadType].cutModelInfo);
 
     const toolPaths = useSelector(state => state[HEAD_LASER]?.toolPathGroup?.getToolPaths(), shallowEqual);
     const toolPathGroup = useSelector(state => state[HEAD_LASER]?.toolPathGroup, shallowEqual);
@@ -253,6 +255,24 @@ const LaserMainPage: React.FC<LaserMainPageProps> = ({ location }) => {
                     onClick: () => {
                         dispatch(editorActions.cancelCutModel());
                         onClose();
+                    }
+                },
+                {
+                    name: i18n._('key-StackedModel/Import-Save 3D Model'),
+                    isAutoWidth: true,
+                    disabled: stackedModelModalDsiabled || !cutModelInfo?.stlInfo?.filename,
+                    onClick: () => {
+                        const filename = cutModelInfo?.stlInfo?.filename;
+                        if (!filename) {
+                            return;
+                        }
+                        const baseName = (cutModelInfo.originalName || 'model').replace(/\.[^.]+$/, '');
+                        dispatch(projectActions.exportFile(filename, `${baseName}-stacked.stl`)).catch((err) => {
+                            if (err && err.message === 'export file canceled') {
+                                return;
+                            }
+                            log.error(err);
+                        });
                     }
                 },
                 {
