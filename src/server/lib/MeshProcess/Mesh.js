@@ -226,6 +226,23 @@ export class Mesh {
         this.coordinate = nCoordinate;
     }
 
+    // new = frame * old. Rows are the output axes in original coordinates.
+    applyLinearFrame(frame) {
+        const next = new AABB3D();
+        for (const vertex of this.vertices) {
+            const p = vertex.p;
+            const x = (frame.x.x * p.x) + (frame.x.y * p.y) + (frame.x.z * p.z);
+            const y = (frame.y.x * p.x) + (frame.y.y * p.y) + (frame.y.z * p.z);
+            const z = (frame.z.x * p.x) + (frame.z.y * p.y) + (frame.z.z * p.z);
+            p.x = x;
+            p.y = y;
+            p.z = z;
+            next.include(p);
+        }
+        this.aabb = next;
+        this.coordinate = new Coordinate();
+    }
+
     finish() {
         for (let i = 0; i < this.faces.length; i++) {
             const face = this.faces[i];

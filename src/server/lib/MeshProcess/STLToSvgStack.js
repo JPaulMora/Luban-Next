@@ -11,6 +11,7 @@ import STLExporter from '../../../shared/lib/STL/STLExporter';
 import {
     layerIsKept,
     normalizeStackSettings,
+    stackFrame,
     upAxisCoordinate
 } from '../../../shared/lib/stackedModel';
 
@@ -47,7 +48,13 @@ class STLToSvgStack {
     slice() {
         if (!this.slicer) {
             const settings = normalizeStackSettings(this.materials);
-            this.meshProcess.mesh.setCoordinateSystem(upAxisCoordinate(settings.upAxis));
+            if (settings.tiltAngle) {
+                this.meshProcess.mesh.applyLinearFrame(
+                    stackFrame(settings.upAxis, settings.tiltAxis, settings.tiltAngle)
+                );
+            } else {
+                this.meshProcess.mesh.setCoordinateSystem(upAxisCoordinate(settings.upAxis));
+            }
 
             this.meshProcess.mesh.resize({
                 x: this.scale,

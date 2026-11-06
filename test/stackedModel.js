@@ -3,9 +3,13 @@ import os from 'os';
 import path from 'path';
 import { test } from 'tape';
 import {
+    defaultTiltAxis,
     layerIsKept,
     limitsForUpAxis,
+    normalizeStackSettings,
+    projectedExtent,
     sliceLayerCount,
+    stackFrame,
     upAxisCoordinate
 } from '../src/shared/lib/stackedModel';
 
@@ -123,6 +127,42 @@ test('stacked model slice settings', (t) => {
     t.deepEqual(limitsForUpAxis('x', 100, 80, 500), { x: 500, y: 80, z: 100 });
     t.deepEqual(limitsForUpAxis('-x', 100, 80, 500), { x: 500, y: 80, z: 100 });
 
+    ['z', '-z', 'y', '-y', 'x', '-x'].forEach((axis) => {
+        const coordinate = upAxisCoordinate(axis);
+        const frame = stackFrame(axis, defaultTiltAxis(axis), 0);
+        ['x', 'y', 'z'].forEach((output) => {
+            const spec = coordinate[output];
+            const sign = spec[0] === '-' ? -1 : 1;
+            const name = spec.slice(-1);
+            t.equal(frame[output].x, name === 'x' ? sign : 0, `${axis} ${output}.x`);
+            t.equal(frame[output].y, name === 'y' ? sign : 0, `${axis} ${output}.y`);
+            t.equal(frame[output].z, name === 'z' ? sign : 0, `${axis} ${output}.z`);
+        });
+        const limits = limitsForUpAxis(axis, 100, 80, 500);
+        t.ok(Math.abs(projectedExtent(limits, frame.x) - 100) < 1e-9, `${axis} bed x`);
+        t.ok(Math.abs(projectedExtent(limits, frame.y) - 80) < 1e-9, `${axis} bed y`);
+        t.ok(Math.abs(projectedExtent(limits, frame.z) - 500) < 1e-9, `${axis} stack`);
+    });
+
+    const towardY = stackFrame('x', 'y', 45);
+    t.ok(Math.abs(towardY.z.x - Math.SQRT1_2) < 1e-9);
+    t.ok(Math.abs(towardY.z.y - Math.SQRT1_2) < 1e-9);
+    t.ok(Math.abs(towardY.z.z) < 1e-9);
+    const towardNegativeY = stackFrame('x', '-y', 45);
+    t.ok(Math.abs(towardNegativeY.z.x - Math.SQRT1_2) < 1e-9);
+    t.ok(Math.abs(towardNegativeY.z.y + Math.SQRT1_2) < 1e-9);
+    const upright = stackFrame('x', 'y', 90);
+    t.ok(Math.abs(upright.z.x) < 1e-12);
+    t.ok(Math.abs(upright.z.y - 1) < 1e-12);
+    t.ok(Math.abs(upright.z.z) < 1e-12);
+
+    t.equal(normalizeStackSettings({ upAxis: 'x', tiltAxis: 'x', tiltAngle: 45 }).tiltAxis, 'y');
+    t.equal(normalizeStackSettings({ upAxis: 'x', tiltAxis: '-y', tiltAngle: 45 }).tiltAxis, '-y');
+    t.equal(normalizeStackSettings({ tiltAngle: 45 }).tiltAngle, 45);
+    t.equal(normalizeStackSettings({ tiltAngle: 120 }).tiltAngle, 90);
+    t.equal(normalizeStackSettings({ tiltAngle: -10 }).tiltAngle, 0);
+    t.equal(normalizeStackSettings({}).tiltAxis, 'x');
+
     t.equal(sliceLayerCount(8, 2, 0), 4);
     t.equal(sliceLayerCount(8, 2, 4), 2);
     t.equal(sliceLayerCount(8, 2, 8), 0);
@@ -201,6 +241,18 @@ test('stacked model slice settings', (t) => {
         });
         fs.unlinkSync(path.join(tmpdir, uploadName));
     });
+
+    const diagonalLength = (10 + 16) * Math.SQRT1_2;
+    const diagonal = cutBox({ upAxis: 'x', tiltAxis: 'y', tiltAngle: 45 });
+    t.equal(diagonal.stlFile.layers, sliceLayerCount(diagonalLength, 2, 0));
+    t.ok(Math.abs(diagonal.stack.aabb.length.z - diagonalLength) < 0.05);
+    t.ok(Math.abs(diagonal.stlFile.width - 8) < 0.05);
+    t.ok(Math.abs(diagonal.stlFile.height - diagonalLength) < 0.05);
+    diagonal.stack.slicer.slicerLayers.forEach((layer) => {
+        t.equal(layer.polygonsPart.size(), 1, `tilt z=${layer.z}`);
+        t.ok(polygonArea(layer) > 1, `tilt z=${layer.z} area`);
+    });
+    removeOutputs(diagonal.uploadName, diagonal.svgFiles, diagonal.stlFile);
 
     const down = cutBox({ upAxis: '-z' });
     t.equal(down.stlFile.layers, 4);

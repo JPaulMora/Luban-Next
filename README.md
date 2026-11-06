@@ -30,7 +30,7 @@ Set the gap between the boxes. Each box and label keeps its own toolpath, so the
 
 ### Stacked models
 
-Choose which axis is up, skip a base, and cut a run of layers before skipping the next run. A base that is not welded to the walls still becomes a full-length side.
+Choose which axis is up, tilt that direction toward another axis, skip a base, and cut a run of layers before skipping the next run. A base that is not welded to the walls still becomes a full-length side.
 
 ### Toolchain
 
@@ -43,6 +43,7 @@ React 18, Webpack 5, and native-module rebuilds that run on Python 3.12+.
 - Laser stacked models can choose which axis is up, skip a base, and alternate cut and skipped layers.
 - A stacked model sliced off Z keeps a full-length side when the base is a separate shell.
 - The stacked-model preview can save that layered model as an STL.
+- A stacked model can tilt its up axis toward another axis.
 - A new laser job leaves the material test closed. Open it from the toolbar.
 - A saved material test keeps each box and its label on their own toolpath.
 - Changing the laser or tool asks to save before the window reloads.

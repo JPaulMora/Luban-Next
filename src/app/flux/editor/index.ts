@@ -2905,7 +2905,9 @@ export const actions = {
                 upAxis: stack.upAxis,
                 modelOffset: stack.modelOffset,
                 layersOn: stack.layersOn,
-                layersOff: stack.layersOff
+                layersOff: stack.layersOff,
+                tiltAxis: stack.tiltAxis,
+                tiltAngle: stack.tiltAngle
             },
             // toolParams: {},
             modelCuttingSettings: {

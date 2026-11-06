@@ -12,7 +12,12 @@ import styles from './styles.styl';
 import { HEAD_LASER, DATA_PREFIX } from '../../../constants';
 import { actions as editorActions } from '../../../flux/editor';
 import { actions as menuActions } from '../../../flux/appbar-menu';
-import { limitsForUpAxis, upAxisName } from '../../../../shared/lib/stackedModel';
+import {
+    axesPerpendicular,
+    defaultTiltAxis,
+    projectedExtent,
+    stackFrame
+} from '../../../../shared/lib/stackedModel';
 import ModelViewer from './Canvas';
 
 let scale = 1, canvasRange = {};
@@ -36,25 +41,34 @@ const StackedModel = ({ setStackedModelModalDsiabled }) => {
     const [modelGeometry, setModelGeometry] = useState(null);
     const [thickness, setThickness] = useState(DEFAULT_THICKNESS);
     const [upAxis, setUpAxis] = useState('z');
+    const [tiltAxis, setTiltAxis] = useState(defaultTiltAxis('z'));
+    const [tiltAngle, setTiltAngle] = useState(0);
     const [modelOffset, setModelOffset] = useState(0);
     const [layersOn, setLayersOn] = useState(1);
     const [layersOff, setLayersOff] = useState(0);
     const dispatch = useDispatch();
     const cutKey = useRef('');
-    const axisLimit = limitsForUpAxis(upAxis, coordinateSize.x, coordinateSize.y, MAX_Z);
-    const stackHeight = size[upAxisName(upAxis)] || 0;
+    const frame = stackFrame(upAxis, tiltAxis, tiltAngle);
+    const stackHeight = projectedExtent(size, frame.z);
 
-    function maxDisplayedRatio(axis) {
-        const limits = limitsForUpAxis(axis, coordinateSize.x, coordinateSize.y, MAX_Z);
-        return Math.min(
-            limits.x / modelInitSize.x,
-            limits.y / modelInitSize.y,
-            limits.z / modelInitSize.z
-        );
+    function maxDisplayedRatio(axis, toward, angle) {
+        const basis = stackFrame(axis, toward, angle);
+        const limits = [
+            [projectedExtent(modelInitSize, basis.x), coordinateSize.x],
+            [projectedExtent(modelInitSize, basis.y), coordinateSize.y],
+            [projectedExtent(modelInitSize, basis.z), MAX_Z]
+        ];
+        return limits.reduce((best, [extent, limit]) => {
+            if (!(extent > 0) || !(limit > 0)) {
+                return best;
+            }
+            return Math.min(best, limit / extent);
+        }, Infinity);
     }
 
-    function applyDisplayedRatio(axis, ratio) {
-        const displayedRatio = Math.min(maxDisplayedRatio(axis), ratio);
+    function applyDisplayedRatio(axis, toward, angle, ratio) {
+        const cap = maxDisplayedRatio(axis, toward, angle);
+        const displayedRatio = Math.min(Number.isFinite(cap) ? cap : ratio, ratio);
         const nextScale = initScale * displayedRatio;
         const nextSize = {
             x: modelInitSize.x * displayedRatio,
@@ -65,11 +79,20 @@ const StackedModel = ({ setStackedModelModalDsiabled }) => {
             scale = nextScale;
             setSize(nextSize);
         }
-        const height = nextSize[upAxisName(axis)];
+        const height = projectedExtent(nextSize, stackFrame(axis, toward, angle).z);
         if (modelOffset > height) {
             setModelOffset(height);
         }
     }
+
+    const sizeCap = maxDisplayedRatio(upAxis, tiltAxis, tiltAngle);
+    const finiteCap = Number.isFinite(sizeCap) ? sizeCap : 1;
+    const sizeMax = {
+        x: Math.max(MIN_SIZE, modelInitSize.x * finiteCap),
+        y: Math.max(MIN_SIZE, modelInitSize.y * finiteCap),
+        z: Math.max(MIN_SIZE, modelInitSize.z * finiteCap)
+    };
+    const tiltOptions = UP_AXIS_OPTIONS.filter((option) => axesPerpendicular(upAxis, option.value));
 
     const actions = {
         loadModel: () => {
@@ -104,6 +127,8 @@ const StackedModel = ({ setStackedModelModalDsiabled }) => {
                 scale,
                 {
                     upAxis,
+                    tiltAxis,
+                    tiltAngle,
                     modelOffset,
                     layersOn,
                     layersOff
@@ -112,26 +137,45 @@ const StackedModel = ({ setStackedModelModalDsiabled }) => {
         },
         onChangeLogicalX: (value) => {
             if (value !== toFixed(size.x, 1)) {
-                applyDisplayedRatio(upAxis, value / modelInitSize.x);
+                applyDisplayedRatio(upAxis, tiltAxis, tiltAngle, value / modelInitSize.x);
             }
         },
         onChangeLogicalY: (value) => {
             if (value !== toFixed(size.y, 1)) {
-                applyDisplayedRatio(upAxis, value / modelInitSize.y);
+                applyDisplayedRatio(upAxis, tiltAxis, tiltAngle, value / modelInitSize.y);
             }
         },
         onChangeLogicalZ: (value) => {
             if (value !== toFixed(size.z, 1)) {
-                applyDisplayedRatio(upAxis, value / modelInitSize.z);
+                applyDisplayedRatio(upAxis, tiltAxis, tiltAngle, value / modelInitSize.z);
             }
         },
         onChangeUpAxis: (value) => {
             if (!value || value === upAxis) {
                 return;
             }
+            const nextTilt = axesPerpendicular(value, tiltAxis) ? tiltAxis : defaultTiltAxis(value);
             const currentRatio = initScale ? scale / initScale : 1;
-            applyDisplayedRatio(value, currentRatio);
+            applyDisplayedRatio(value, nextTilt, tiltAngle, currentRatio);
+            setTiltAxis(nextTilt);
             setUpAxis(value);
+        },
+        onChangeTiltAxis: (value) => {
+            if (!value || value === tiltAxis || !axesPerpendicular(upAxis, value)) {
+                return;
+            }
+            const currentRatio = initScale ? scale / initScale : 1;
+            applyDisplayedRatio(upAxis, value, tiltAngle, currentRatio);
+            setTiltAxis(value);
+        },
+        onChangeTiltAngle: (value) => {
+            const next = Math.min(90, Math.max(0, Number(value) || 0));
+            if (next === tiltAngle) {
+                return;
+            }
+            const currentRatio = initScale ? scale / initScale : 1;
+            applyDisplayedRatio(upAxis, tiltAxis, next, currentRatio);
+            setTiltAngle(next);
         },
         onChangeMaterialThick: (value) => {
             if (value !== thickness) {
@@ -176,14 +220,15 @@ const StackedModel = ({ setStackedModelModalDsiabled }) => {
             return;
         }
         const key = [
-            size.x, size.y, size.z, thickness, upAxis, modelOffset, layersOn, layersOff
+            size.x, size.y, size.z, thickness, upAxis, tiltAxis, tiltAngle,
+            modelOffset, layersOn, layersOff
         ].join(':');
         if (cutKey.current === key) {
             return;
         }
         cutKey.current = key;
         actions.generateModelStack();
-    }, [size, thickness, upAxis, modelOffset, layersOn, layersOff, cuttingModel]);
+    }, [size, thickness, upAxis, tiltAxis, tiltAngle, modelOffset, layersOn, layersOff, cuttingModel]);
     useEffect(() => {
         if (stlInfo && stlInfo.filename && cuttingModel) {
             actions.loadModel();
@@ -220,6 +265,45 @@ const StackedModel = ({ setStackedModelModalDsiabled }) => {
                             }}
                         />
                     </div>
+                    <div className={classNames(styles.title, styles.thickness)}>{i18n._('key-StackedModel/Import-Tilt Toward')}</div>
+                    <div className="sm-flex height-32 margin-vertical-16">
+                        <Select
+                            disabled={disabled}
+                            size="large"
+                            showSearch={false}
+                            options={tiltOptions}
+                            value={tiltAxis}
+                            onChange={(option) => {
+                                actions.onChangeTiltAxis(option && option.value);
+                            }}
+                        />
+                    </div>
+                    <div className={classNames(styles.title)}>{i18n._('key-StackedModel/Import-Tilt Angle')}</div>
+                    <div className={classNames(styles.hint)}>{i18n._('key-StackedModel/Import-Tilt Hint')}</div>
+                    <div className="sm-flex height-32 margin-vertical-16">
+                        <span className="sm-flex-width sm-flex justify-space-between">
+                            <div className="position-re sm-flex align-flex-start">
+                                <span className="width-16 height-32 display-inline unit-text align-c margin-left-4 margin-right-4">
+                                    A
+                                </span>
+                                <span>
+                                    <Input
+                                        suffix="°"
+                                        disabled={disabled}
+                                        className="margin-horizontal-2"
+                                        value={tiltAngle}
+                                        size="large"
+                                        min={0}
+                                        max={90}
+                                        decimalPlaces={1}
+                                        onChange={(value) => {
+                                            actions.onChangeTiltAngle(value);
+                                        }}
+                                    />
+                                </span>
+                            </div>
+                        </span>
+                    </div>
                 </div>
                 <div>
                     <div className={classNames(styles.title, styles.thickness)}>{i18n._('key-StackedModel/Import-Model Size')}</div>
@@ -237,7 +321,7 @@ const StackedModel = ({ setStackedModelModalDsiabled }) => {
                                         value={toFixed(size.x, 1)}
                                         size="large"
                                         min={MIN_SIZE}
-                                        max={axisLimit.x}
+                                        max={sizeMax.x}
                                         onChange={(value) => {
                                             actions.onChangeLogicalX(value);
                                         }}
@@ -260,7 +344,7 @@ const StackedModel = ({ setStackedModelModalDsiabled }) => {
                                         value={toFixed(size.y, 1)}
                                         size="large"
                                         min={MIN_SIZE}
-                                        max={axisLimit.y}
+                                        max={sizeMax.y}
                                         onChange={(value) => {
                                             actions.onChangeLogicalY(value);
                                         }}
@@ -283,7 +367,7 @@ const StackedModel = ({ setStackedModelModalDsiabled }) => {
                                         value={toFixed(size.z, 1)}
                                         size="large"
                                         min={MIN_SIZE}
-                                        max={axisLimit.z}
+                                        max={sizeMax.z}
                                         onChange={(value) => {
                                             actions.onChangeLogicalZ(value);
                                         }}
