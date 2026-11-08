@@ -334,12 +334,12 @@ const Cnc: React.FC<CNCMainPageProps> = ({ location }) => {
                     i18n._('key-Cnc/Page-D is the diameter of the material,  and L is the length of the material.'),
                     i18n._('key-Cnc/Page-Origin is fixed at the center of the cross-section of the cylinder, far way from the chuck.')
                 ) : laserCncIntroStepOne(
-                    i18n._('key-Cnc/Page-Set the work size and where the work origin will be.'),
-                    i18n._('key-Cnc/Page-X is the width of the material,  and Y is the height of the material.'),
-                    i18n._('There are two types of origin mode.'),
-                    i18n._('In object origin mode, the origin is at the corners or center of the object.'),
-                    i18n._('In workpiece origin mode, the origin is at the corners or center of the workpiece.'),
-                    i18n._('This point (X0, Y0) is the origin of the design coordinate system, and the origin to be positioned or set on the machine needs to coincide with this point.'),
+                    i18n._('key-Cnc/Page-Set the workpiece size and which point on it is the work origin.'),
+                    i18n._('key-Cnc/Page-X is the width of the workpiece, and Y is its height.'),
+                    i18n._('key-Cnc/Page-Choose where (0, 0) sits.'),
+                    i18n._('key-Cnc/Page-On the workpiece, pick a corner or the center. Objects are placed from that point.'),
+                    i18n._('key-Cnc/Page-With a locking block, the origin stays at the block. Position A or B sets the workpiece size.'),
+                    i18n._('key-Cnc/Page-Set the work origin on the machine at that same point, and the job cuts where you placed the objects.'),
                     null,
                 ),
                 title: `${i18n._('key-Cnc/Page-Job Setup')} (1/8)`
