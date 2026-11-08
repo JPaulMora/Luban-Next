@@ -482,7 +482,10 @@ export const actions = {
 
                 compareAndSet(data, currentState, 'isEnclosureDoorOpen', isEnclosureDoorOpen);
                 compareAndSet(data, currentState, 'zAxisModule', zAxisModule);
-                compareAndSet(data, currentState, 'headStatus', !!headStatus);
+                // A missing flag is not "off". HTTP omits headStatus until power is known.
+                if (!isNil(headStatus)) {
+                    compareAndSet(data, currentState, 'headStatus', headStatus);
+                }
                 compareAndSet(data, currentState, 'laserCamera', laserCamera);
 
                 if (!isNil(airPurifier)) {

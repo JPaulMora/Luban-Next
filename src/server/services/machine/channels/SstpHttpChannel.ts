@@ -19,6 +19,7 @@ import workerManager from '../../task-manager/workerManager';
 import { ConnectionType, EventOptions } from '../types';
 import Channel, { CncChannelInterface, ExecuteGcodeResult, FileChannelInterface, LaserChannelInterface, UploadFileOptions } from './Channel';
 import { ChannelEvent } from './ChannelEvent';
+import { deriveHeadStatus } from './laserState';
 
 let waitConfirm: boolean;
 const log = logger('machine:channels:SstpHttpChannel');
@@ -343,6 +344,8 @@ class SstpHttpChannel extends Channel implements
                 ...this.state,
                 gcodePrintingInfo: this.getGcodePrintingInfo(data),
                 isHomed: data?.homed,
+                // HTTP status has numeric laserPower and no on/off flag.
+                headStatus: deriveHeadStatus(data?.laserPower),
                 status: data.status.toLowerCase(),
                 airPurifier: !isNil(data.airPurifierSwitch),
                 pos: {
