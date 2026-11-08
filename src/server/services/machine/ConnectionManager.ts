@@ -736,7 +736,13 @@ class ConnectionManager {
 
             // Move, Upload, Start
             Promise.all(promises)
-                .then(() => {
+                .then((results) => {
+                    const prepFailed = (results || []).some((result) => result && result.result !== 0);
+                    if (prepFailed) {
+                        log.error('startGcode: preparatory move failed; aborting job start.');
+                        socket.emit(SocketEvent.StartGCode, { err: 'failed', text: 'Failed to set work position before starting; job aborted.' });
+                        return;
+                    }
                     this.channel.uploadGcodeFile(gcodeFilePath, headType, renderName, (msg) => {
                         log.info(`uploadGcodeFile result: ${msg}`);
                         if (msg) {
@@ -748,6 +754,10 @@ class ConnectionManager {
                         }
                         this.channel.startGcode(options);
                     });
+                })
+                .catch((e) => {
+                    log.error(`startGcode: preparatory sequence error; aborting job start. ${e}`);
+                    socket.emit(SocketEvent.StartGCode, { err: 'failed', text: 'Error preparing the machine before start; job aborted.' });
                 });
         } else {
             // Serial port

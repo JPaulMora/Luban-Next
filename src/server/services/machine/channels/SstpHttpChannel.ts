@@ -100,6 +100,7 @@ export type StateOptions = {
 };
 
 export type GcodeResult = {
+    ok?: boolean;
     text?: string;
     data?: string;
     msg?: string;
@@ -399,9 +400,13 @@ class SstpHttpChannel extends Channel implements
                 .end((err, res) => {
                     const { code, data, text } = _getResult(err, res);
                     if (err) {
-                        resolve({ code });
+                        // 202 and 203 are busy/status replies the rest of this channel
+                        // already treats as non-fatal. A real failure must be visible
+                        // so a missed focus move does not start the job.
+                        const ok = code === 202 || code === 203;
+                        resolve({ ok, code, text });
                     } else {
-                        resolve({ data, text });
+                        resolve({ ok: true, data, text });
                     }
                 });
         });
@@ -417,15 +422,24 @@ class SstpHttpChannel extends Channel implements
         while (this.gcodeQueue.length > 0) {
             const splice = this.gcodeQueue.splice(0, 1)[0];
             const results = [];
+            let failed = false;
             for (const code of splice.gcodes) {
-                const { text } = await this._executeGcode(code) as GcodeResult;
+                // A leading newline makes the first segment empty. Posting that
+                // fails, and aborting the group would skip the real move.
+                if (!code || !code.trim()) {
+                    continue;
+                }
+                const { ok, text } = await this._executeGcode(code) as GcodeResult;
                 if (text) {
                     results.push(text);
+                }
+                if (ok === false) {
+                    failed = true;
                 }
             }
 
             splice.callback && splice.callback({
-                result: 0,
+                result: failed ? -1 : 0,
                 text: results.join('\n'),
             });
         }
