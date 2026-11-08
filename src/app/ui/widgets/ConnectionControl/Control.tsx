@@ -1,4 +1,5 @@
 import { WorkflowStatus } from '@snapmaker/luban-platform';
+import { Modal } from 'antd';
 import { isNil } from 'lodash';
 import includes from 'lodash/includes';
 import map from 'lodash/map';
@@ -14,7 +15,10 @@ import { RootState } from '../../../flux/index.def';
 import { actions as widgetsActions } from '../../../flux/widget';
 import { actions as workspaceActions } from '../../../flux/workspace';
 import { MachineAgent } from '../../../flux/workspace/MachineAgent';
+import { sequenceGoToOrigin } from '../../../lib/goToOriginSequence';
 import usePrevious from '../../../lib/hooks/previous';
+import i18n from '../../../lib/i18n';
+import { originMoveNeedsConfirm } from '../../../lib/originPlausibility';
 import { in2mm, mm2in } from '../../../lib/units';
 import ControlPanel from './ControlPanel';
 import DisplayPanel from './DisplayPanel';
@@ -228,6 +232,22 @@ const Control: React.FC<ConnectionControlProps> = ({ widgetId, isNotInWorkspace,
             setState({ ...state, customAngle: _customAngle });
         },
 
+        goToWorkOrigin: () => {
+            const currentZ = parseFloat(state.workPosition && state.workPosition.z);
+            const lines = sequenceGoToOrigin({ z: currentZ }, state.jogSpeed);
+            const run = () => {
+                actions.executeGcode(lines.join('\n'));
+            };
+            if (originMoveNeedsConfirm({ currentZ, targetZ: 0 })) {
+                Modal.confirm({
+                    title: i18n._('key-Workspace/Control/MotionButton-Go To Work Origin'),
+                    content: i18n._('The head will move down to the saved work origin. Make sure the path is clear.'),
+                    onOk: run,
+                });
+                return;
+            }
+            run();
+        },
         move: (params = {}, useGcode) => {
             const sArr = [];
             const s = map(params, (value, axis) => {
