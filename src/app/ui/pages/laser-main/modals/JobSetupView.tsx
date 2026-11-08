@@ -400,7 +400,16 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
                             <div className="margin-left-16">
                                 <TipTrigger
                                     title={i18n._('key-CncLaser/JobSetup-Origin Mode')}
-                                    content={i18n._('Taking the object as the origin will take a certain location of the object as the origin. With the workpiece as the origin, a certain position of the workpiece will be used as the origin, and the relative position of the origin from the object will affect the final processing position.')}
+                                    content={(
+                                        <div>
+                                            <div>
+                                                {i18n._('key-CncLaser/JobSetup-Object: (0, 0) is a corner or the center of the objects. Moving them on the workpiece does not move the cut. Set the machine origin on that point of the real objects.')}
+                                            </div>
+                                            <div className="margin-top-8">
+                                                {i18n._('key-CncLaser/JobSetup-Workpiece: (0, 0) is a corner or the center of the workpiece. The cut follows where the objects sit. Set the machine origin on that point of the workpiece.')}
+                                            </div>
+                                        </div>
+                                    )}
                                 >
                                     <div className="height-32 sm-flex">
                                         <span className="width-144 margin-right-8 text-overflow-ellipsis">

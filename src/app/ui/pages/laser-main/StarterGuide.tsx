@@ -56,10 +56,10 @@ const getSteps = (series: string, isRotate: boolean): StepItem[] => {
             ) : laserCncIntroStepOne(
                 i18n._('key-Laser/Page-Set the work size and where the work origin will be.'),
                 i18n._('key-Laser/Page-X is the width of the material,  and Y is the height of the material.'),
-                i18n._('There are two types of origin mode.'),
-                i18n._('In object origin mode, the origin is at the corners or center of the object.'),
-                i18n._('In workpiece origin mode, the origin is at the corners or center of the workpiece.'),
-                i18n._('This point (X0, Y0) is the origin of the design coordinate system, and the origin to be positioned or set on the machine needs to coincide with this point.'),
+                i18n._('key-Laser/Page-Origin mode chooses what (0, 0) is measured from.'),
+                i18n._('key-Laser/Page-Object: a corner or the center of the objects. The job is measured from that point, so moving the objects on the workpiece does not move the cut. Set the machine origin on that point of the real objects.'),
+                i18n._('key-Laser/Page-Workpiece: a corner or the center of the workpiece. The cut follows where the objects sit. Set the machine origin on that point of the workpiece.'),
+                i18n._('key-Laser/Page-Origin Position picks the corner or the center. That point has to match the work origin you set on the machine.'),
                 i18n._('There are two types of origin offset modes: crosshair mode and laser spot mode. In most cases we recommend using the crosshair mode, it is safer and easier to use. The laser spot mode is only recommended when full-stroke machining is required.')
             ),
             title: `${i18n._('key-Laser/Page-Job Setup')} (1/8)`
