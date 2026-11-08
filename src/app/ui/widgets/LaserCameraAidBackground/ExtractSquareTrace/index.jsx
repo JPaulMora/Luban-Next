@@ -132,9 +132,19 @@ class ExtractSquareTrace extends React.PureComponent {
             this.props.changeCanTakePhoto(false);
             const { address } = this.props.server;
 
-            const resPro = await api.getCameraCalibration({ 'address': address, 'toolHead': this.props.toolHead.laserToolhead });
+            let resPro;
+            try {
+                resPro = await api.getCameraCalibration({ 'address': address, 'toolHead': this.props.toolHead.laserToolhead });
+            } catch (e) {
+                log.error(`Unable to get calibration matrix: ${e}`);
+                this.props.executeGcodeG54(this.props.series, this.props.headType);
+                this.props.changeCanTakePhoto(true);
+                return;
+            }
             if (!resPro.body.res) {
                 log.error('Unable to get calibration matrix');
+                this.props.executeGcodeG54(this.props.series, this.props.headType);
+                this.props.changeCanTakePhoto(true);
                 return;
             }
             const resData = JSON.parse(resPro.body.res.text);

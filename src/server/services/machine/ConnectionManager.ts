@@ -1292,18 +1292,24 @@ M3`;
             this.channel.goHome(headType);
             socket && socket.emit('move:status', { isHoming: true });
         } else {
-            await this.executeGcode(socket, { gcode: 'G53' });
-            await this.executeGcode(socket, { gcode: 'G28' });
-
-            callback && callback();
-
-            // ?
+            // Tell the UI homing has started before G28, and that it finished
+            // after G28. The old order emitted "homing" only once G28 returned,
+            // and never emitted the end, so the Wi-Fi modal stuck.
             if (this.connectionType === ConnectionType.WiFi) {
                 socket && socket.emit('move:status', { isHoming: true });
             }
-            if (headType === HEAD_LASER || headType === HEAD_CNC) {
-                await this.executeGcode(socket, { gcode: 'G54' });
+
+            await this.executeGcode(socket, { gcode: 'G53' });
+            await this.executeGcode(socket, { gcode: 'G28' });
+            // G28 leaves modal machine coordinates. The next absolute move
+            // would otherwise use machine Z0. G54 is harmless for a print head.
+            await this.executeGcode(socket, { gcode: 'G54' });
+
+            if (this.connectionType === ConnectionType.WiFi) {
+                socket && socket.emit('move:status', { isHoming: false });
             }
+
+            callback && callback();
         }
     };
 
