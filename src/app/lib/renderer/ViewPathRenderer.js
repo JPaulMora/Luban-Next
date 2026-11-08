@@ -180,10 +180,15 @@ export class ViewPathRenderer {
     }
 
     _generateMaterial(color = '#cea775') {
+        // Transparent solid overlay — default mesh preview, not the Boolean sim
         return new THREE.MeshPhongMaterial(
             {
                 color: color,
-                shininess: 0
+                shininess: 0,
+                transparent: true,
+                opacity: 0.45,
+                depthWrite: false,
+                side: THREE.DoubleSide,
             }
         );
     }

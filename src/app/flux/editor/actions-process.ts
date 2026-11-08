@@ -98,6 +98,14 @@ export const processActions = {
             })
         );
 
+        // CNC mesh preview + solid sim are stale once toolpaths regenerate
+        if (headType === HEAD_CNC) {
+            const toolPathGroupForClear = toolPathGroup as ToolPathGroup;
+            toolPathGroupForClear.clearMeshPreview();
+            dispatch(processActions.clearSolidSimulation(headType));
+            dispatch(processActions.resetSimulationPreviewState(headType));
+        }
+
         // Re-calculate tool paths
         dispatch(processActions.recalculateAllToolPath(headType));
 
@@ -111,7 +119,7 @@ export const processActions = {
 
     showToolPathGroupObject: (headType) => {
         return (dispatch, getState) => {
-            const { modelGroup, displayedType } = getState()[headType];
+            const { modelGroup, displayedType, hasSolidSimulation, showSimulation } = getState()[headType];
 
             const toolPathGroup = getState()[headType].toolPathGroup as ToolPathGroup;
 
@@ -130,11 +138,15 @@ export const processActions = {
                 baseActions.updateState(headType, {
                     displayedType: DISPLAYED_TYPE_TOOLPATH,
                     showToolPath: true,
-                    showSimulation: false
+                    // Keep solid sim visibility when returning to preview with a result
+                    showSimulation: hasSolidSimulation ? !!showSimulation : false
                 })
             );
 
             dispatch(baseActions.render(headType));
+            if (headType === HEAD_CNC) {
+                dispatch(processActions.ensureCncMeshPreview(headType));
+            }
         };
     },
 
@@ -167,11 +179,15 @@ export const processActions = {
     },
 
     showSimulationInPreview: (headType, show) => (dispatch, getState) => {
-        const { toolPathGroup, displayedType } = getState()[headType];
+        const { toolPathGroup, displayedType, hasSolidSimulation } = getState()[headType];
         if (displayedType === DISPLAYED_TYPE_MODEL) {
             return;
         }
-        toolPathGroup.showSimulationObject(show);
+        // Simulation checkbox only toggles the solid Boolean result
+        if (!hasSolidSimulation && !toolPathGroup.hasSolidSimulation()) {
+            return;
+        }
+        toolPathGroup.showSolidSimulation(show);
         dispatch(
             baseActions.updateState(headType, {
                 showSimulation: show
@@ -186,6 +202,66 @@ export const processActions = {
                 simulationNeedToPreview: true
             })
         );
+        dispatch(baseActions.render(headType));
+    },
+
+    /**
+     * Drop solid sim result. Caller should resetSimulationPreviewState + ensureCncMeshPreview
+     * when the heightfield needs a refresh.
+     */
+    clearSolidSimulation: headType => (dispatch, getState) => {
+        const { toolPathGroup } = getState()[headType];
+        toolPathGroup.clearSolidSimulation();
+        dispatch(
+            baseActions.updateState(headType, {
+                hasSolidSimulation: false,
+                showSimulation: false,
+                solidSimRunning: false,
+                solidSimProgress: 0,
+                solidSimTaskId: null,
+            })
+        );
+        dispatch(baseActions.render(headType));
+    },
+
+    /**
+     * Invalidate both heightfield and solid sim after toolpath changes (CNC).
+     */
+    invalidateCncSimulations: headType => (dispatch, getState) => {
+        if (headType !== HEAD_CNC) {
+            return;
+        }
+        const { toolPathGroup } = getState()[headType];
+        toolPathGroup.clearMeshPreview();
+        dispatch(processActions.clearSolidSimulation(headType));
+        dispatch(processActions.resetSimulationPreviewState(headType));
+        dispatch(processActions.ensureCncMeshPreview(headType));
+    },
+
+    /**
+     * CNC: keep heightfield mesh preview on by default when no solid sim exists.
+     */
+    ensureCncMeshPreview: headType => (dispatch, getState) => {
+        if (headType !== HEAD_CNC) {
+            return;
+        }
+        const state = getState()[headType];
+        const { toolPathGroup, displayedType, hasSolidSimulation, simulationNeedToPreview } = state;
+        if (displayedType !== DISPLAYED_TYPE_TOOLPATH) {
+            return;
+        }
+        if (hasSolidSimulation || toolPathGroup.hasSolidSimulation()) {
+            toolPathGroup.showMeshPreview(false);
+            return;
+        }
+        if (!toolPathGroup.canGenerateGcode()) {
+            return;
+        }
+        if (simulationNeedToPreview) {
+            dispatch(processActions.commitGenerateViewPath(headType));
+            return;
+        }
+        toolPathGroup.showMeshPreview(true);
         dispatch(baseActions.render(headType));
     },
 
@@ -320,8 +396,12 @@ export const processActions = {
     updateToolPath: (headType, toolPathId, newState) => (dispatch, getState) => {
         const { toolPathGroup, materials } = getState()[headType];
         toolPathGroup.updateToolPath(toolPathId, newState, { materials });
-        dispatch(processActions.showSimulationInPreview(headType, false));
-        dispatch(processActions.resetSimulationPreviewState(headType));
+        if (headType === HEAD_CNC) {
+            dispatch(processActions.invalidateCncSimulations(headType));
+        } else {
+            dispatch(processActions.showSimulationInPreview(headType, false));
+            dispatch(processActions.resetSimulationPreviewState(headType));
+        }
         dispatch(
             baseActions.updateState(headType, {
                 isChangedAfterGcodeGenerating: true
@@ -386,7 +466,12 @@ export const processActions = {
         });
 
         dispatch(operationHistoryActions.setOperations(headType, operations));
-        dispatch(processActions.showSimulationInPreview(headType, false));
+        if (headType === HEAD_CNC) {
+            dispatch(processActions.invalidateCncSimulations(headType));
+        } else {
+            dispatch(processActions.showSimulationInPreview(headType, false));
+            dispatch(processActions.resetSimulationPreviewState(headType));
+        }
 
         let newDisplayedType = displayedType;
         let newNeedToPreview = false;
@@ -515,7 +600,10 @@ export const processActions = {
         }
         const { gcodeFile } = taskResult;
         modelGroup.estimatedTime = gcodeFile.estimatedTime;
-        toolPathGroup.showSimulationObject(false);
+        // Keep CNC heightfield mesh; only hide solid sim overlay if present
+        if (toolPathGroup.hasSolidSimulation()) {
+            toolPathGroup.showSolidSimulation(false);
+        }
 
         const boundingBox = new Box3(
             new Vector3(gcodeFile.boundingBox.min.x, gcodeFile.boundingBox.min.y, gcodeFile.boundingBox.min.z),
@@ -597,6 +685,117 @@ export const processActions = {
         });
     },
 
+    /**
+     * Dexel carve at 0.1 mm (flat/ball/V bit stamps). Separate from heightfield mesh preview.
+     */
+    commitGenerateSolidSimulation: headType => (dispatch, getState) => {
+        if (headType !== HEAD_CNC) {
+            return;
+        }
+        const state = getState()[headType];
+        const { toolPathGroup, materials, coordinateSize, solidSimRunning } = state;
+        if (solidSimRunning) {
+            return;
+        }
+        if (materials && materials.isRotate) {
+            toast(makeSceneToast('warning', i18n._('Solid Simulate supports flat workpieces only.')));
+            return;
+        }
+
+        const infos = toolPathGroup.getCommitGenerateSolidSimulationInfos();
+        if (!infos) {
+            toast(makeSceneToast('warning', i18n._('Generate a toolpath before running Simulate.')));
+            return;
+        }
+
+        const stockDepth = (materials && materials.z > 0) ? materials.z : 10;
+        const size = coordinateSize || { x: 100, y: 100 };
+        const stock = {
+            minX: -size.x / 2,
+            maxX: size.x / 2,
+            minY: -size.y / 2,
+            maxY: size.y / 2,
+            stockDepth,
+        };
+
+        const taskId = uuid();
+        dispatch(
+            baseActions.updateState(headType, {
+                solidSimRunning: true,
+                solidSimProgress: 0.01,
+                solidSimTaskId: taskId,
+            })
+        );
+
+        controller.commitSolidSimulationTask({
+            taskId,
+            headType,
+            data: {
+                toolPathFiles: infos.toolPathFiles,
+                toolParams: infos.toolParams,
+                stock,
+            },
+        });
+    },
+
+    cancelGenerateSolidSimulation: headType => (dispatch, getState) => {
+        const { solidSimTaskId } = getState()[headType];
+        if (solidSimTaskId) {
+            controller.cancelSolidSimulationTask(solidSimTaskId);
+        }
+        dispatch(
+            baseActions.updateState(headType, {
+                solidSimRunning: false,
+                solidSimProgress: 0,
+                solidSimTaskId: null,
+            })
+        );
+    },
+
+    onGenerateSolidSimulation: (headType, taskResult) => async (dispatch, getState) => {
+        const { toolPathGroup, solidSimTaskId, solidSimRunning } = getState()[headType];
+        // Ignore stale results after Cancel
+        if (!solidSimRunning || (solidSimTaskId && taskResult && taskResult.taskId && taskResult.taskId !== solidSimTaskId)) {
+            return;
+        }
+        const failed = !taskResult || taskResult.taskStatus === 'failed' || !taskResult.result;
+        if (failed) {
+            dispatch(
+                baseActions.updateState(headType, {
+                    solidSimRunning: false,
+                    solidSimProgress: 0,
+                    solidSimTaskId: null,
+                })
+            );
+            toast(makeSceneToast('warning', i18n._('Failed to run solid simulation.')));
+            return;
+        }
+
+        try {
+            const solidSimFile = taskResult.result.solidSimFile;
+            await toolPathGroup.onGenerateSolidSim(solidSimFile);
+            dispatch(
+                baseActions.updateState(headType, {
+                    hasSolidSimulation: true,
+                    showSimulation: true,
+                    solidSimRunning: false,
+                    solidSimProgress: 1,
+                    solidSimTaskId: null,
+                })
+            );
+            dispatch(baseActions.render(headType));
+        } catch (e) {
+            dispatch(
+                baseActions.updateState(headType, {
+                    solidSimRunning: false,
+                    solidSimProgress: 0,
+                    solidSimTaskId: null,
+                })
+            );
+            toast(makeSceneToast('warning', i18n._('Failed to run solid simulation.')));
+        }
+    },
+
     setAutoPreview: (headType, autoPreviewEnabled) => dispatch => {
         dispatch(
             baseActions.updateState(headType, {
@@ -633,9 +832,16 @@ export const processActions = {
         };
         await toolPathGroup.onGenerateViewPath(viewPathFile, isRotate ? materials : boundarySize);
 
+        const { hasSolidSimulation } = getState()[headType];
+        // Heightfield is the default mesh preview — not the Simulation checkbox
+        if (!hasSolidSimulation) {
+            toolPathGroup.showMeshPreview(true);
+        } else {
+            toolPathGroup.showMeshPreview(false);
+        }
+
         dispatch(
             baseActions.updateState(headType, {
-                showSimulation: true,
                 stage: STEP_STAGE.CNC_LASER_RENDER_VIEWPATH,
                 progress: progressStatesManager.updateProgress(STEP_STAGE.CNC_LASER_RENDER_VIEWPATH, 1)
             })

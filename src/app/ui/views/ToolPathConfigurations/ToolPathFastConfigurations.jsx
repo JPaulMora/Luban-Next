@@ -111,9 +111,11 @@ function ToolPathFastConfigurations({ setEditingToolpath, headType, toolpath }) 
                 toolParams.toolDiameter = toolDefinition.settings.diameter.default_value;
                 toolParams.toolAngle = toolDefinition.settings.angle.default_value;
                 toolParams.toolShaftDiameter = toolDefinition.settings.shaft_diameter.default_value;
+                // Needed by solid sim bit profile (flat / ball / vbit)
+                toolParams.toolType = toolDefinition.settings.tool_type?.default_value;
 
                 for (const key of Object.keys(toolDefinition.settings)) {
-                    if (['diameter', 'angle', 'shaft_diameter'].includes(key)) {
+                    if (['diameter', 'angle', 'shaft_diameter', 'tool_type'].includes(key)) {
                         continue;
                     }
                     gcodeConfig[toHump(key)] = toolDefinition.settings[key].default_value;

@@ -94,6 +94,8 @@ class SocketCommunication {
         'taskCompleted:svgClipping': [],
         'taskProgress:generateViewPath': [],
         'taskCompleted:generateViewPath': [],
+        'taskProgress:generateSolidSimulation': [],
+        'taskCompleted:generateSolidSimulation': [],
         'taskProgress:cutModel': [],
         'taskCompleted:cutModel': [],
         'generate-support:started': [],
@@ -310,6 +312,14 @@ class SocketCommunication {
 
     public commitViewPathTask(task) {
         socketController.emit('taskCommit:generateViewPath', task);
+    }
+
+    public commitSolidSimulationTask(task) {
+        socketController.emit('taskCommit:generateSolidSimulation', task);
+    }
+
+    public cancelSolidSimulationTask(taskId) {
+        socketController.emit('taskCancel:generateSolidSimulation', taskId);
     }
 
     public commitGcodeTask(task) {

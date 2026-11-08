@@ -4,6 +4,7 @@ import { Box2, Box3 } from 'three';
 import { DATA_PREFIX, DEFAULT_LUBAN_HOST, HEAD_LASER } from '../constants';
 import { Origin } from '../constants/coordinate';
 import { ViewPathRenderer } from '../lib/renderer/ViewPathRenderer';
+import { SolidSimRenderer } from '../lib/renderer/SolidSimRenderer';
 import { generateModelDefaultConfigs } from '../models/ModelInfoUtils';
 import ThreeModel from '../models/ThreeModel';
 import ToolPath from './ToolPath';
@@ -26,7 +27,11 @@ class ToolPathGroup {
 
     public simulationObjects = new THREE.Group();
 
-    public simulationObject = null;
+    /** Fast heightfield mesh preview (always-on unless a solid sim exists). */
+    public meshPreviewObject = null;
+
+    /** Solid Boolean carve result (toggled via Simulation checkbox). */
+    public solidSimObject = null;
 
     public materialsObject = null;
 
@@ -80,10 +85,60 @@ class ToolPathGroup {
         showWood && (this.simulationObjects.visible = show);
     }
 
-    public showSimulationObject(show) {
-        // Todo, control it in actions-process
-        this.simulationObject && (this.simulationObjects.visible = show);
-        this.simulationObject && (this.simulationObject.visible = show);
+    public hasSolidSimulation(): boolean {
+        return !!this.solidSimObject;
+    }
+
+    /**
+     * Heightfield mesh preview: visible when no solid sim exists.
+     * While a solid sim is available the mesh stays off regardless of `show`.
+     */
+    public showMeshPreview(show: boolean): void {
+        if (!this.meshPreviewObject) {
+            return;
+        }
+        if (this.solidSimObject) {
+            this.meshPreviewObject.visible = false;
+            return;
+        }
+        this.simulationObjects.visible = true;
+        this.meshPreviewObject.visible = show;
+    }
+
+    /** Toggle solid Boolean simulation visibility. */
+    public showSolidSimulation(show: boolean): void {
+        if (!this.solidSimObject) {
+            return;
+        }
+        this.simulationObjects.visible = true;
+        this.solidSimObject.visible = show;
+        // Mesh preview stays disabled while solid result exists
+        if (this.meshPreviewObject) {
+            this.meshPreviewObject.visible = false;
+        }
+    }
+
+    /** @deprecated Prefer showSolidSimulation — kept for callers that hide any sim overlay. */
+    public showSimulationObject(show: boolean): void {
+        if (this.solidSimObject) {
+            this.showSolidSimulation(show);
+            return;
+        }
+        this.showMeshPreview(show);
+    }
+
+    public clearSolidSimulation(): void {
+        if (this.solidSimObject) {
+            this.simulationObjects.remove(this.solidSimObject);
+            this.solidSimObject = null;
+        }
+    }
+
+    public clearMeshPreview(): void {
+        if (this.meshPreviewObject) {
+            this.simulationObjects.remove(this.meshPreviewObject);
+            this.meshPreviewObject = null;
+        }
     }
 
     public setUpdatedCallBack(updatedCallback) {
@@ -574,14 +629,81 @@ class ToolPathGroup {
             new THREE.FileLoader().load(
                 toolPathFilePath,
                 async (data) => {
-                    this.simulationObject && (this.simulationObjects.remove(this.simulationObject));
+                    this.clearMeshPreview();
 
                     const viewPathData = JSON.parse(data);
-                    this.simulationObject = await new ViewPathRenderer().render(viewPathData, size);
+                    this.meshPreviewObject = await new ViewPathRenderer().render(viewPathData, size);
 
-                    this.simulationObjects.add(this.simulationObject);
-
+                    this.simulationObjects.add(this.meshPreviewObject);
                     this.simulationObjects.visible = true;
+                    // Hidden while a solid sim occupies the Simulation toggle
+                    this.meshPreviewObject.visible = !this.solidSimObject;
+
+                    resolve();
+                },
+                null,
+                (err) => {
+                    reject(err);
+                }
+            );
+        });
+    }
+
+    /**
+     * Collect toolpath JSON filenames + tool params for solid Boolean simulation.
+     */
+    public getCommitGenerateSolidSimulationInfos() {
+        const toolPaths = this._getCheckAndSuccessToolPaths();
+        if (!toolPaths || toolPaths.length === 0) {
+            return null;
+        }
+
+        const toolPathFiles = [];
+        let toolParams = null;
+        for (const toolPath of toolPaths) {
+            if (!toolPath.visible) {
+                continue;
+            }
+            if (!toolParams && toolPath.toolParams) {
+                toolParams = { ...toolPath.toolParams };
+            }
+            for (const modelID of toolPath.visibleModelIDs) {
+                const entry = toolPath.modelMap.get(modelID);
+                if (entry && entry.toolPathFile) {
+                    toolPathFiles.push({
+                        filename: entry.toolPathFile,
+                    });
+                }
+            }
+        }
+
+        if (toolPathFiles.length === 0) {
+            return null;
+        }
+
+        return {
+            toolPathFiles,
+            toolParams: toolParams || {},
+        };
+    }
+
+    public async onGenerateSolidSim(solidSimFile) {
+        const filePath = `${DATA_PREFIX}/${solidSimFile}`;
+        return new Promise((resolve, reject) => {
+            new THREE.FileLoader().load(
+                filePath,
+                async (data) => {
+                    this.clearSolidSimulation();
+
+                    const solidSimData = JSON.parse(data);
+                    this.solidSimObject = await new SolidSimRenderer().render(solidSimData);
+
+                    this.simulationObjects.add(this.solidSimObject);
+                    this.simulationObjects.visible = true;
+                    this.solidSimObject.visible = true;
+                    if (this.meshPreviewObject) {
+                        this.meshPreviewObject.visible = false;
+                    }
 
                     resolve();
                 },

@@ -83,8 +83,14 @@ const INITIAL_STATE = {
     displayedType: DISPLAYED_TYPE_MODEL,
     toolPathGroup: new ToolPathGroup(initModelGroup, 'cnc'),
     showToolPath: false,
+    /** Visibility of solid Boolean simulation (checkbox). */
     showSimulation: false,
+    /** True once a solid Simulate result is loaded (reveals Simulation checkbox). */
+    hasSolidSimulation: false,
     simulationNeedToPreview: true,
+    solidSimRunning: false,
+    solidSimProgress: 0,
+    solidSimTaskId: null,
 
     SVGActions: new SVGActionsFactory(initModelGroup),
     SVGCanvasMode: 'select',

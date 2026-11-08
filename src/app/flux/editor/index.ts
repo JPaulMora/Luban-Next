@@ -365,6 +365,17 @@ export const actions = {
                 );
             });
 
+            controller.on('taskProgress:generateSolidSimulation', taskResult => {
+                if (headType !== taskResult.headType) {
+                    return;
+                }
+                dispatch(
+                    actions.updateState(headType, {
+                        solidSimProgress: taskResult.progress
+                    })
+                );
+            });
+
             controller.on('taskProgress:cutModel', noop);
 
             controller.on('taskProgress:processImage', taskResult => {
@@ -542,6 +553,9 @@ export const actions = {
                             progress: 1,
                         })
                     );
+                } else if (headType === HEAD_CNC) {
+                    // Heightfield mesh preview starts automatically once toolpaths are ready
+                    dispatch(processActions.ensureCncMeshPreview(headType));
                 }
             });
 
@@ -565,6 +579,13 @@ export const actions = {
                     })
                 );
                 dispatch(processActions.onGenerateViewPath(headType, taskResult));
+            });
+
+            controller.on('taskCompleted:generateSolidSimulation', taskResult => {
+                if (headType !== taskResult.headType) {
+                    return;
+                }
+                dispatch(processActions.onGenerateSolidSimulation(headType, taskResult));
             });
 
             controller.on('taskCompleted:cutModel', taskResult => {
@@ -2754,7 +2775,13 @@ export const actions = {
             modelGroup.setMaterials(materials);
 
             toolPathGroup.updateMaterials(materials);
-            toolPathGroup.showSimulationObject(false);
+
+            // Workpiece size/depth change invalidates CNC mesh + solid sim
+            if (headType === HEAD_CNC) {
+                dispatch(processActions.invalidateCncSimulations(headType));
+            } else {
+                toolPathGroup.showSimulationObject(false);
+            }
 
             // Update again in case x and y are re-calculated
             dispatch(
@@ -2763,6 +2790,7 @@ export const actions = {
                         ...materials
                     },
                     showSimulation: false,
+                    ...(headType === HEAD_CNC ? { hasSolidSimulation: false } : {}),
                 })
             );
         };
