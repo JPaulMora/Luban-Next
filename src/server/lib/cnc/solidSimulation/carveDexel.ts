@@ -11,11 +11,16 @@ const log = logger('cnc:solidSimulation');
 
 export type CarveDexelOptions = {
     toolParams: ToolParams;
-    stock: StockSpec;
+    /** Create a new stock from this spec (ignored if `into` is set). */
+    stock?: StockSpec;
+    /** Carve into an existing dexel grid (multi-tool sequential). */
+    into?: DexelStock;
     cellMm?: number;
     pathStepMm?: number;
     onProgress?: (p: number) => void;
     shouldCancel?: () => boolean;
+    /** When true, zero stamps is OK (e.g. air-only segment). */
+    allowEmpty?: boolean;
 };
 
 function sampleSegment(from: Vec3, to: Vec3, stepMm: number, onPoint: (p: Vec3) => void): void {
@@ -41,6 +46,7 @@ function sampleSegment(from: Vec3, to: Vec3, stepMm: number, onPoint: (p: Vec3) 
 
 /**
  * Walk cutting moves and stamp the bit into a dexel stock grid.
+ * Pass `into` to accumulate into an existing stock (multi-tool).
  */
 export function carveDexelFromCommands(
     commands: ToolCommand[],
@@ -49,11 +55,19 @@ export function carveDexelFromCommands(
     const cellMm = options.cellMm ?? DEXEL_CELL_MM;
     const pathStepMm = options.pathStepMm ?? DEXEL_PATH_STEP_MM;
     const profile = resolveBitProfile(options.toolParams);
-    const stock = createDexelStock(options.stock, cellMm);
+
+    let stock: DexelStock;
+    if (options.into) {
+        stock = options.into;
+    } else if (options.stock) {
+        stock = createDexelStock(options.stock, cellMm);
+    } else {
+        throw new Error('carveDexelFromCommands requires stock or into');
+    }
 
     log.info(
         `dexel carve bit=${profile.kind} d=${profile.diameter} `
-        + `cell=${cellMm}mm grid=${stock.nx}x${stock.ny} `
+        + `cell=${stock.cellMm}mm grid=${stock.nx}x${stock.ny} `
         + `commands=${commands.length}`
     );
 
@@ -85,7 +99,7 @@ export function carveDexelFromCommands(
                     lastLoggedLine = move.line;
                     log.info(
                         `gcode ${move.line}/${lineTotal} stamps=${stamps} `
-                        + `grid=${stock.nx}x${stock.ny}`
+                        + `bit=${profile.kind} grid=${stock.nx}x${stock.ny}`
                     );
                 }
                 return undefined;
@@ -98,12 +112,12 @@ export function carveDexelFromCommands(
         return null;
     }
 
-    if (stamps === 0) {
+    if (stamps === 0 && !options.allowEmpty) {
         log.warn('dexel carve produced no stamps');
         return null;
     }
 
-    log.info(`dexel carve done stamps=${stamps}`);
+    log.info(`dexel carve done stamps=${stamps} bit=${profile.kind}`);
     if (options.onProgress) {
         options.onProgress(0.95);
     }

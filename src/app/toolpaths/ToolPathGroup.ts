@@ -650,7 +650,8 @@ class ToolPathGroup {
     }
 
     /**
-     * Collect toolpath JSON filenames + tool params for solid Boolean simulation.
+     * Collect visible toolpath files with per-path toolParams for solid sim.
+     * Multi-tool jobs stamp each path's bit into one shared stock in list order.
      */
     public getCommitGenerateSolidSimulationInfos() {
         const toolPaths = this._getCheckAndSuccessToolPaths();
@@ -659,19 +660,17 @@ class ToolPathGroup {
         }
 
         const toolPathFiles = [];
-        let toolParams = null;
         for (const toolPath of toolPaths) {
             if (!toolPath.visible) {
                 continue;
             }
-            if (!toolParams && toolPath.toolParams) {
-                toolParams = { ...toolPath.toolParams };
-            }
+            const toolParams = toolPath.toolParams ? { ...toolPath.toolParams } : {};
             for (const modelID of toolPath.visibleModelIDs) {
                 const entry = toolPath.modelMap.get(modelID);
                 if (entry && entry.toolPathFile) {
                     toolPathFiles.push({
                         filename: entry.toolPathFile,
+                        toolParams,
                     });
                 }
             }
@@ -683,7 +682,6 @@ class ToolPathGroup {
 
         return {
             toolPathFiles,
-            toolParams: toolParams || {},
         };
     }
 

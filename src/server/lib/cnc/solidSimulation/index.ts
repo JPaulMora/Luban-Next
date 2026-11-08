@@ -7,6 +7,7 @@ export { stampBitAtTip, surfaceZUnderBit, stampRadiusXY } from './bitStamp';
 export { carveDexelFromCommands } from './carveDexel';
 export { dexelToMesh } from './dexelToMesh';
 export { runSolidSimulation } from './runSolidSimulation';
+export type { CarveSegment, RunSolidSimulationInput } from './runSolidSimulation';
 export {
     DEXEL_CELL_MM,
     DEXEL_PATH_STEP_MM,

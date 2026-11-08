@@ -732,7 +732,6 @@ export const processActions = {
             headType,
             data: {
                 toolPathFiles: infos.toolPathFiles,
-                toolParams: infos.toolParams,
                 stock,
             },
         });

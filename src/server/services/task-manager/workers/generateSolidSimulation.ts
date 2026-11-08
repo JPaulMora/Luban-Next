@@ -2,7 +2,7 @@ import fs from 'fs';
 
 import { pathWithRandomSuffix } from '../../../../shared/lib/random-utils';
 import { runSolidSimulation } from '../../../lib/cnc/solidSimulation';
-import type { ToolCommand, ToolParams, StockSpec } from '../../../lib/cnc/solidSimulation';
+import type { CarveSegment, ToolCommand, ToolParams, StockSpec } from '../../../lib/cnc/solidSimulation';
 import { writeMeshJson } from '../../../lib/cnc/solidSimulation/writeMeshJson';
 import logger from '../../../lib/logger';
 import sendMessage from '../utils/sendMessage';
@@ -11,13 +11,15 @@ const log = logger('worker:generateSolidSimulation');
 
 type ToolPathFileEntry = {
     filename: string;
+    toolParams?: ToolParams;
     positionX?: number;
     positionY?: number;
 };
 
 type SolidSimTaskData = {
     toolPathFiles: ToolPathFileEntry[];
-    toolParams: ToolParams;
+    /** @deprecated Prefer per-file toolParams; kept as fallback for older callers. */
+    toolParams?: ToolParams;
     stock: StockSpec;
 };
 
@@ -68,35 +70,41 @@ const generateSolidSimulation = (taskData: SolidSimTaskData) => {
         const stock = taskData.stock;
         log.info(
             `solid sim files=${taskData.toolPathFiles.length} `
-            + `stock=[${stock.minX},${stock.minY}]-[${stock.maxX},${stock.maxY}] z=${stock.stockDepth} `
-            + `tool=${JSON.stringify(taskData.toolParams || {})}`
+            + `stock=[${stock.minX},${stock.minY}]-[${stock.maxX},${stock.maxY}] z=${stock.stockDepth}`
         );
 
         onProgress(0.01);
-        const commands: ToolCommand[] = [];
+        const segments: CarveSegment[] = [];
+        const fallbackTool = taskData.toolParams || {};
+
         for (let i = 0; i < taskData.toolPathFiles.length; i++) {
             const entry = taskData.toolPathFiles[i];
             if (!entry || !entry.filename) {
                 continue;
             }
-            log.info(`solid sim load toolpath ${i + 1}/${taskData.toolPathFiles.length}: ${entry.filename}`);
-            const part = loadCommandsFromToolPathFile(entry);
-            log.info(`solid sim loaded ${part.length} commands from ${entry.filename}`);
-            // Avoid push(...part): large V-bit paths blow the call stack
-            for (let j = 0; j < part.length; j++) {
-                commands.push(part[j]);
+            log.info(
+                `solid sim load toolpath ${i + 1}/${taskData.toolPathFiles.length}: ${entry.filename} `
+                + `tool=${JSON.stringify(entry.toolParams || fallbackTool)}`
+            );
+            const commands = loadCommandsFromToolPathFile(entry);
+            log.info(`solid sim loaded ${commands.length} commands from ${entry.filename}`);
+            if (commands.length === 0) {
+                continue;
             }
+            segments.push({
+                commands,
+                toolParams: entry.toolParams || fallbackTool,
+            });
             onProgress(0.01 + (0.04 * (i + 1)) / taskData.toolPathFiles.length);
         }
 
-        if (commands.length === 0) {
+        if (segments.length === 0) {
             throw new Error('Toolpath commands are empty');
         }
-        log.info(`solid sim total commands=${commands.length}`);
+        log.info(`solid sim segments=${segments.length}`);
 
         const result = runSolidSimulation({
-            commands,
-            toolParams: taskData.toolParams || {},
+            segments,
             stock: taskData.stock,
             onProgress: (p) => onProgress(0.05 + p * 0.9),
         });
@@ -111,7 +119,6 @@ const generateSolidSimulation = (taskData: SolidSimTaskData) => {
 
         const outputFilename = pathWithRandomSuffix('solid-sim.json');
         const outputFilePath = `${process.env.Tmpdir}/${outputFilename}`;
-        // Chunked write — JSON.stringify of large meshes overflows the stack
         writeMeshJson(outputFilePath, result);
 
         const elapsedMs = Date.now() - startedAt;

@@ -175,8 +175,10 @@ test('runSolidSimulation returns mesh buffers', (t) => {
         { M: 5 },
     ];
     const result = runSolidSimulation({
-        commands,
-        toolParams: { toolType: 'flat', toolDiameter: 2 },
+        segments: [{
+            commands,
+            toolParams: { toolType: 'flat', toolDiameter: 2 },
+        }],
         stock: { minX: -10, maxX: 10, minY: -10, maxY: 10, stockDepth: 8 },
     });
     t.ok(result);
@@ -185,6 +187,76 @@ test('runSolidSimulation returns mesh buffers', (t) => {
     t.equal(result.stockDepth, 8);
     t.equal(result.positions.length % 3, 0);
     t.equal(DEXEL_CELL_MM, 0.1);
+    t.end();
+});
+
+test('runSolidSimulation switches bit profile per segment', (t) => {
+    // Flat at z=-1 clears a wide trench; V-bit at z=-3 digs a deeper center
+    const flatPass = [
+        { M: 3 },
+        { G: 0, X: -4, Y: 0, Z: 2 },
+        { G: 1, Z: -1 },
+        { G: 1, X: 4, Y: 0 },
+        { G: 0, Z: 2 },
+        { M: 5 },
+    ];
+    const vbitPass = [
+        { M: 3 },
+        { G: 0, X: 0, Y: 0, Z: 2 },
+        { G: 1, Z: -3 },
+        { G: 0, Z: 2 },
+        { M: 5 },
+    ];
+    const stockSpec = { minX: -8, maxX: 8, minY: -8, maxY: 8, stockDepth: 8 };
+    const cellMm = 0.2;
+
+    const shared = createDexelStock(stockSpec, cellMm);
+    carveDexelFromCommands(flatPass, {
+        toolParams: { toolType: 'flat', toolDiameter: 3 },
+        into: shared,
+        pathStepMm: cellMm,
+        allowEmpty: true,
+    });
+    const afterFlat = shared.z[Math.floor(shared.ny / 2) * shared.nx + Math.floor(shared.nx / 2)];
+    t.ok(afterFlat <= -0.9 && afterFlat >= -1.1, `flat center z=${afterFlat}`);
+
+    carveDexelFromCommands(vbitPass, {
+        toolParams: {
+            toolType: 'vbit',
+            toolAngle: 60,
+            toolDiameter: 0.2,
+            toolShaftDiameter: 3.175,
+        },
+        into: shared,
+        pathStepMm: cellMm,
+        allowEmpty: true,
+    });
+    const afterV = shared.z[Math.floor(shared.ny / 2) * shared.nx + Math.floor(shared.nx / 2)];
+    t.ok(afterV < afterFlat - 0.5, `vbit deepened center ${afterFlat} -> ${afterV}`);
+
+    // Off-center cell under flat diameter should stay near flat depth (V tip is narrow)
+    const offIx = Math.floor(shared.nx / 2) + Math.round(1.2 / cellMm);
+    const offZ = shared.z[Math.floor(shared.ny / 2) * shared.nx + offIx];
+    t.ok(offZ > afterV + 0.5, `off-center stays shallower: off=${offZ} center=${afterV}`);
+
+    const meshed = runSolidSimulation({
+        segments: [
+            { commands: flatPass, toolParams: { toolType: 'flat', toolDiameter: 3 } },
+            {
+                commands: vbitPass,
+                toolParams: {
+                    toolType: 'vbit',
+                    toolAngle: 60,
+                    toolDiameter: 0.2,
+                    toolShaftDiameter: 3.175,
+                },
+            },
+        ],
+        stock: stockSpec,
+        cellMm,
+    });
+    t.ok(meshed);
+    t.ok(meshed.indices.length >= 3);
     t.end();
 });
 
