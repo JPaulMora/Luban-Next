@@ -121,7 +121,8 @@ const generateViewPath = (modelInfos) => {
         }));
     }
     onProgress(1);
-    targetDepth += 5;
+    // Stock block thickness: job workpiece Z when set, else deepest cut + pad
+    const stockDepth = (materials.z > 0) ? materials.z : (targetDepth + 5);
     return new Promise((resolve, reject) => {
         Promise.all(reps).then(results => {
             const holes = materials.isRotate ? generateBoxPointsByRotate(results) : generateBoxPoints(results);
@@ -129,6 +130,7 @@ const generateViewPath = (modelInfos) => {
             const viewPath = {
                 holes: holes,
                 targetDepth,
+                stockDepth,
                 data: results,
                 isRotate: materials.isRotate,
                 diameter: materials.diameter

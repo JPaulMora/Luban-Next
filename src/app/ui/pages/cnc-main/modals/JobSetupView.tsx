@@ -1,5 +1,5 @@
 import { Machine } from '@snapmaker/luban-platform';
-import React, { useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 
 import {
@@ -178,13 +178,19 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
         });
     }, [updateWorkpiece]);
 
+    // Keep stock thickness across X/Y-only updates (e.g. locking block) without
+    // putting size in setWorkpieceSize deps, which would re-fire that effect.
+    const workpieceSizeZRef = useRef((workpiece.size as RectangleWorkpieceSize).z);
+    workpieceSizeZRef.current = (workpiece.size as RectangleWorkpieceSize).z;
+
     const setWorkpieceSize = useCallback((size: RectangleWorkpieceSize | CylinderWorkpieceSize) => {
         if (workpiece.shape === WorkpieceShape.Rectangle) {
+            const rect = size as RectangleWorkpieceSize;
             updateWorkpiece({
                 size: {
-                    x: (size as RectangleWorkpieceSize).x,
-                    y: (size as RectangleWorkpieceSize).y,
-                    z: (size as RectangleWorkpieceSize).z,
+                    x: rect.x,
+                    y: rect.y,
+                    z: rect.z !== undefined ? rect.z : workpieceSizeZRef.current,
                 }
             });
         } else if (workpiece.shape === WorkpieceShape.Cylinder) {
@@ -310,6 +316,7 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
     // Maximum
     const maxX = activeMachine?.metadata.size.x || 0;
     const maxY = activeMachine?.metadata.size.y || 0;
+    const maxZ = activeMachine?.metadata.size.z || 0;
 
     // FIXME: Add image to origin options
     let imgOF3axisCoordinateMode = '';
@@ -429,6 +436,24 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
                                             x: (workpiece.size as RectangleWorkpieceSize).x,
                                             y: value,
                                             z: (workpiece.size as RectangleWorkpieceSize).z,
+                                        });
+                                    }}
+                                />
+                            </div>
+                            <div className="sm-flex height-32 position-re margin-top-16">
+                                <span className="width-144 margin-right-8">{i18n._('key-CncLaser/JobSetup-Thickness (Z)')}</span>
+                                <Input
+                                    suffix="mm"
+                                    disabled={inProgress || settingSizeDisabled}
+                                    value={toFixed((workpiece.size as RectangleWorkpieceSize).z || 0, 1)}
+                                    max={maxZ}
+                                    min={0.1}
+                                    step={0.1}
+                                    onChange={(value) => {
+                                        setWorkpieceSize({
+                                            x: (workpiece.size as RectangleWorkpieceSize).x,
+                                            y: (workpiece.size as RectangleWorkpieceSize).y,
+                                            z: value,
                                         });
                                     }}
                                 />

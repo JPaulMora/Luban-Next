@@ -14,6 +14,7 @@ import {
     DATA_PREFIX,
     DISPLAYED_TYPE_MODEL,
     DISPLAYED_TYPE_TOOLPATH,
+    HEAD_CNC,
     HEAD_LASER,
     LOAD_MODEL_FROM_OUTER,
     MAX_LASER_CNC_CANVAS_SCALE,
@@ -2599,7 +2600,8 @@ export const actions = {
                     {
                         x: activeMachine.metadata.size.x,
                         y: activeMachine.metadata.size.y,
-                        z: activeMachine.metadata.size.z,
+                        // CNC stock thickness; laser keeps machine Z travel for historical behavior
+                        z: headType === HEAD_CNC ? 10 : activeMachine.metadata.size.z,
                     }
                 ));
                 await dispatch(actions.updateWorkpieceObject(headType));

@@ -102,19 +102,27 @@ export class ViewPathRenderer {
         return mesh;
     }
 
+    _stockDepth(viewPaths) {
+        return (viewPaths.stockDepth > 0) ? viewPaths.stockDepth : viewPaths.targetDepth;
+    }
+
     _generateViewPathObjs(viewPaths) {
         const group = new THREE.Group();
+        const stockDepth = this._stockDepth(viewPaths);
         for (const viewPath of viewPaths.data) {
             // eslint-disable-next-line no-unused-vars
             const { boundingBox } = viewPath;
             const mesh = this._generateViewPathObj(viewPath);
 
             if (!viewPaths.isRotate) {
-                const boxPoints = this._generateByBox(boundingBox.min, boundingBox.max);
-                const boxMesh = this._generateMesh(new THREE.Shape(boxPoints),
-                    viewPaths.targetDepth - boundingBox.length.z - 1, '#cccccc');
-                boxMesh.position.z = -viewPaths.targetDepth;
-                group.add(boxMesh);
+                // Slab under the carve; skip when less than 1 mm remains (z-fighting)
+                const underCut = stockDepth - boundingBox.length.z - 1;
+                if (underCut >= 1) {
+                    const boxPoints = this._generateByBox(boundingBox.min, boundingBox.max);
+                    const boxMesh = this._generateMesh(new THREE.Shape(boxPoints), underCut, '#cccccc');
+                    boxMesh.position.z = -stockDepth;
+                    group.add(boxMesh);
+                }
             }
             group.add(mesh);
         }
@@ -145,6 +153,7 @@ export class ViewPathRenderer {
                 group.add(mesh);
             }
         } else {
+            const stockDepth = this._stockDepth(viewPaths);
             const points = this._generateByBox({ x: size.minX, y: size.minY }, { x: size.maxX, y: size.maxY });
 
             const shape = new THREE.Shape(points);
@@ -153,8 +162,8 @@ export class ViewPathRenderer {
                 shape.holes.push(new THREE.Shape(hole));
             }
 
-            const mesh = this._generateMesh(shape, viewPaths.targetDepth);
-            mesh.position.z = -viewPaths.targetDepth;
+            const mesh = this._generateMesh(shape, stockDepth);
+            mesh.position.z = -stockDepth;
             group.add(mesh);
         }
         return group;

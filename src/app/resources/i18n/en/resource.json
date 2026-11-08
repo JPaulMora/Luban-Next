@@ -1260,6 +1260,7 @@
     "key-CncLaser/JobSetup-Confirm": "Confirm",
     "key-CncLaser/JobSetup-Diameter (D)": "Diameter (D)",
     "key-CncLaser/JobSetup-Height (Y)": "Height (Y)",
+    "key-CncLaser/JobSetup-Thickness (Z)": "Thickness (Z)",
     "key-CncLaser/JobSetup-Job Setup": "Job Setup",
     "key-CncLaser/JobSetup-Length (L)": "Length (L)",
     "key-CncLaser/JobSetup-Locking block position": "Locking block position",
