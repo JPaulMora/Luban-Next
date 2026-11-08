@@ -56,6 +56,7 @@ import {
 import logger from '../../../lib/logger';
 import SacpClient, { CoordinateType, MotorPowerMode } from '../sacp/SacpClient';
 import { MarlinStateData } from '../types';
+import { finiteAxis } from '../setWorkOriginGcode';
 import Channel, {
     AirPurifierChannelInterface,
     CncChannelInterface,
@@ -1295,18 +1296,18 @@ class SacpChannelBase extends Channel implements
     public setWorkOrigin = async ({ xPosition, yPosition, zPosition, bPosition }) => {
         log.info(`position: ${xPosition}, ${yPosition}, ${zPosition}, ${bPosition}`);
         const coordinateInfos = [];
-        if (xPosition) {
-            coordinateInfos.push(new CoordinateInfo(Direction.X1, xPosition));
-        }
-        if (yPosition) {
-            coordinateInfos.push(new CoordinateInfo(Direction.Y1, yPosition));
-        }
-        if (zPosition) {
-            coordinateInfos.push(new CoordinateInfo(Direction.Z1, zPosition));
-        }
-        if (bPosition) {
-            coordinateInfos.push(new CoordinateInfo(Direction.B1, bPosition));
-        }
+        const axes = [
+            [Direction.X1, xPosition],
+            [Direction.Y1, yPosition],
+            [Direction.Z1, zPosition],
+            [Direction.B1, bPosition],
+        ];
+        axes.forEach(([direction, position]) => {
+            const value = finiteAxis(position);
+            if (value !== null) {
+                coordinateInfos.push(new CoordinateInfo(direction, value));
+            }
+        });
         await this.sacpClient.setWorkOrigin(coordinateInfos).then(res => {
             log.info(`Set Work Origin: ${res.data}`);
         });

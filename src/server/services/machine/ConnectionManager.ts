@@ -15,7 +15,6 @@ import {
 } from '../../../app/machines';
 import DataStorage from '../../DataStorage';
 import {
-    HEAD_CNC,
     HEAD_LASER,
     HEAD_PRINTING,
     LEVEL_ONE_POWER_LASER_FOR_SM2,
@@ -52,6 +51,7 @@ import { ConnectionType } from './types';
 import SacpChannelBase from './channels/SacpChannel';
 import { L2WLaserToolModule } from '../../../app/machines/snapmaker-2-toolheads';
 import { octo } from './adaptor/Octo';
+import { buildSetWorkOriginGcode } from './setWorkOriginGcode';
 
 const log = logger('lib:ConnectionManager');
 
@@ -1334,11 +1334,12 @@ M3`;
         if (includes([NetworkProtocol.SacpOverTCP, SerialPortProtocol.SacpOverSerialPort], this.protocol)) {
             this.channel.setWorkOrigin({ xPosition, yPosition, zPosition, bPosition });
         } else {
-            let gcode = 'G92 ';
-            xPosition && (gcode += `X${xPosition || 0} `);
-            yPosition && (gcode += `Y${yPosition || 0}  `);
-            zPosition && (gcode += `Z${zPosition || 0} `);
-            bPosition && (gcode += `B${bPosition || 0} `);
+            const gcode = buildSetWorkOriginGcode({
+                x: xPosition,
+                y: yPosition,
+                z: zPosition,
+                b: bPosition,
+            });
             await this.executeGcode(socket, { gcode });
             callback && callback();
         }
