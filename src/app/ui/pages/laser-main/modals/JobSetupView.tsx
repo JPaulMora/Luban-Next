@@ -28,6 +28,7 @@ import { NumberInput as Input } from '../../../components/Input';
 import Select from '../../../components/Select';
 import TipTrigger from '../../../components/TipTrigger';
 import { getSupportedRunBoundaryModeOptions } from '../../../../constants/machines';
+import { limitToReach, reachableRectangleSize } from '../../../../machines/rectangleWorkSize';
 
 
 export type JobSetupViewHandle = {
@@ -46,6 +47,15 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
     const origin = useSelector((state: RootState) => state[HEAD_LASER].origin, shallowEqual) as Origin;
 
     const { inProgress, useBackground, useABPosition } = useSelector((state: RootState) => state[HEAD_LASER]);
+    const activeModules = useSelector((state: RootState) => state.machine.modules) as string[];
+
+    const reachableSize = useMemo(() => reachableRectangleSize(
+        activeMachine?.metadata?.size,
+        activeMachine?.metadata?.modules,
+        activeModules,
+    ), [activeMachine, activeModules]);
+    const maxX = reachableSize.x;
+    const maxY = reachableSize.y;
 
     // workpiece
     const [workpiece, updateWorkpiece] = useSetState<Workpiece>({
@@ -54,8 +64,8 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
             diameter: materials.diameter,
             length: materials.length,
         } : {
-            x: materials.x,
-            y: materials.y,
+            x: limitToReach(materials.x, maxX),
+            y: limitToReach(materials.y, maxY),
             z: materials.z,
         }
     });
@@ -68,11 +78,12 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
 
     const setWorkpieceSize = useCallback((size: RectangleWorkpieceSize | CylinderWorkpieceSize) => {
         if (workpiece.shape === WorkpieceShape.Rectangle) {
+            const rectangle = size as RectangleWorkpieceSize;
             updateWorkpiece({
                 size: {
-                    x: (size as RectangleWorkpieceSize).x,
-                    y: (size as RectangleWorkpieceSize).y,
-                    z: (size as RectangleWorkpieceSize).z,
+                    x: limitToReach(rectangle.x, maxX),
+                    y: limitToReach(rectangle.y, maxY),
+                    z: rectangle.z,
                 }
             });
         } else if (workpiece.shape === WorkpieceShape.Cylinder) {
@@ -83,7 +94,7 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
                 }
             });
         }
-    }, [updateWorkpiece, workpiece.shape]);
+    }, [updateWorkpiece, workpiece.shape, maxX, maxY]);
 
     // Use materials to update local workpiece state
     useEffect(() => {
@@ -192,8 +203,6 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
     /**
      * Other parameters calculated
      */
-    const maxX = activeMachine?.metadata.size.x || 0;
-    const maxY = activeMachine?.metadata.size.y || 0;
 
     // FIXME: Add image to origin options
     let imgOF3axisCoordinateMode = '';
@@ -212,11 +221,19 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
     useImperativeHandle(ref, () => {
         return {
             onChange: () => {
+                const committedSize = workpiece.shape === WorkpieceShape.Rectangle
+                    ? {
+                        x: limitToReach((workpiece.size as RectangleWorkpieceSize).x, maxX),
+                        y: limitToReach((workpiece.size as RectangleWorkpieceSize).y, maxY),
+                        z: (workpiece.size as RectangleWorkpieceSize).z,
+                    }
+                    : workpiece.size;
+
                 // Workpiece
                 dispatch(editorActions.setWorkpiece(
                     HEAD_LASER,
                     workpiece.shape,
-                    workpiece.size,
+                    committedSize,
                 ));
 
                 dispatch(editorActions.updateWorkpieceObject(HEAD_LASER));
@@ -234,13 +251,14 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
 
                 // FIXME
                 if (workpiece.shape === WorkpieceShape.Rectangle) {
+                    const rectangle = committedSize as RectangleWorkpieceSize;
                     dispatch(editorActions.changeCoordinateMode(
                         HEAD_LASER,
                         targetOption.mode,
                         {
-                            x: (workpiece.size as RectangleWorkpieceSize).x,
-                            y: (workpiece.size as RectangleWorkpieceSize).y,
-                            z: (workpiece.size as RectangleWorkpieceSize).z,
+                            x: rectangle.x,
+                            y: rectangle.y,
+                            z: rectangle.z,
                         }
                     ));
                 } else if (workpiece.shape === WorkpieceShape.Cylinder) {
@@ -263,6 +281,8 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
 
         workpiece.shape,
         workpiece.size,
+        maxX,
+        maxY,
 
         selectedOrigin,
 
@@ -294,7 +314,7 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
                                     <Input
                                         suffix="mm"
                                         disabled={inProgress || settingSizeDisabled}
-                                        value={toFixed((workpiece.size as RectangleWorkpieceSize).x, 1)}
+                                        value={toFixed(limitToReach((workpiece.size as RectangleWorkpieceSize).x, maxX), 1)}
                                         max={maxX}
                                         min={2}
                                         onChange={(value) => {
@@ -311,7 +331,7 @@ const JobSetupView = React.forwardRef<JobSetupViewHandle, {}>((_, ref) => {
                                     <Input
                                         suffix="mm"
                                         disabled={inProgress || settingSizeDisabled}
-                                        value={toFixed((workpiece.size as RectangleWorkpieceSize).y, 1)}
+                                        value={toFixed(limitToReach((workpiece.size as RectangleWorkpieceSize).y, maxY), 1)}
                                         max={maxY}
                                         min={10}
                                         onChange={(value) => {
