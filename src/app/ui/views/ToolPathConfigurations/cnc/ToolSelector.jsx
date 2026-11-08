@@ -63,14 +63,21 @@ function ToolSelector({
     toolDefinitions.forEach(tool => {
         const category = tool.category;
         const definitionId = tool.definitionId;
-        if (Object.keys(tool?.settings).length > 0) {
+        if (Object.keys(tool?.settings || {}).length > 0) {
             const checkboxAndSelectGroup = {};
             const name = tool.name;
             let detailName = '';
-            if (tool.settings.angle.default_value !== '180') {
-                detailName = `${tool.name} (${tool.settings.angle.default_value}${tool.settings.angle.unit} ${tool.settings.shaft_diameter.default_value}${tool.settings.shaft_diameter.unit})`;
+            const angle = tool.settings.angle?.default_value;
+            const angleUnit = tool.settings.angle?.unit || '';
+            const shaftDiameter = tool.settings.shaft_diameter?.default_value;
+            const shaftUnit = tool.settings.shaft_diameter?.unit || '';
+            // Some profiles (or incomplete definitions) omit angle / shaft_diameter
+            if (angle !== undefined && angle !== '180' && shaftDiameter !== undefined) {
+                detailName = `${tool.name} (${angle}${angleUnit} ${shaftDiameter}${shaftUnit})`;
+            } else if (shaftDiameter !== undefined) {
+                detailName = `${tool.name} (${shaftDiameter}${shaftUnit})`;
             } else {
-                detailName = `${tool.name} (${tool.settings.shaft_diameter.default_value}${tool.settings.shaft_diameter.unit})`;
+                detailName = tool.name;
             }
             checkboxAndSelectGroup.name = name;
             checkboxAndSelectGroup.definitionId = definitionId;
