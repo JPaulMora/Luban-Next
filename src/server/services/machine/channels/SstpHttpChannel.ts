@@ -863,6 +863,10 @@ class SstpHttpChannel extends Channel implements
             .get(api)
             .end((err, res) => {
                 const currentModuleStatus = _getResult(err, res)?.data;
+                // A failed poll must not replace the last enclosure state with empty fields.
+                if (err || isNil(currentModuleStatus)) {
+                    return;
+                }
                 if (!isEqual(this.moduleSettings, currentModuleStatus)) {
                     this.moduleSettings = currentModuleStatus;
                     this.socket && this.socket.emit('Marlin:settings', {
