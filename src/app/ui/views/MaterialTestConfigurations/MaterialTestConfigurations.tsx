@@ -18,36 +18,17 @@ import { Button } from '../../components/Buttons';
 import { toHump } from '../../../../shared/lib/utils';
 import MaterialTestParameters from './MaterialTestParameters';
 import { editorStore } from '../../../store/local-storage';
+import {
+    getMaterialTestPreset,
+    getMaterialTestPresets,
+    initialMaterialTestForm,
+    materialTestStorageKey,
+    MaterialTestPresetId,
+} from './materialTestPresets';
 
 function getDefaultDefinition(toolDefinitions = []) {
     return toolDefinitions.find(d => d?.definitionId === 'material_test.default_engraving');
 }
-
-const DEFAULT_FORM_DATA = {
-    rectRows: 5,
-    speedMin: 600,
-    speedMax: 7200,
-    rectHeight: 5,
-    rectRowGap: 6,
-    rectCols: 5,
-    powerMin: 10,
-    powerMax: 100,
-    rectWidth: 5,
-    rectColGap: 6,
-};
-
-function getDefaultFormData() {
-    const storeData = editorStore.get(`${HEAD_LASER}LastMaterialTest`);
-    if (!storeData) {
-        return { ...DEFAULT_FORM_DATA };
-    }
-    const saved = Object.fromEntries(Object.entries(JSON.parse(storeData)).map(([key, value]) => [key, Number(value)]));
-    return {
-        ...DEFAULT_FORM_DATA,
-        ...Object.fromEntries(Object.entries(saved).filter(([, value]) => Number.isFinite(value))),
-    };
-}
-
 
 interface MaterialTestConfigurationsProps {
     onClose: () => void;
@@ -56,7 +37,12 @@ interface MaterialTestConfigurationsProps {
 const MaterialTestConfigurations: React.FC<MaterialTestConfigurationsProps> = ({ onClose }) => {
     const toolDefinitions = useSelector(state => state[HEAD_LASER]?.toolDefinitions, shallowEqual);
     const materials = useSelector(state => state[HEAD_LASER]?.materials, shallowEqual);
+    const toolHeadIdentifier = useSelector(state => state.machine?.toolHead?.laserToolhead) as string;
     const dispatch = useDispatch();
+    const [initialForm] = useState(() => initialMaterialTestForm(
+        toolHeadIdentifier,
+        editorStore.get(materialTestStorageKey(toolHeadIdentifier))
+    ));
 
     const [currentToolDefinition, setCurrentToolDefinition] = useState(getDefaultDefinition(toolDefinitions));
 
@@ -103,8 +89,13 @@ const MaterialTestConfigurations: React.FC<MaterialTestConfigurationsProps> = ({
 
     const [toolParams, setToolParams] = useState({});
     const [gcodeConfig, setGcodeConfig] = useState({});
-    const [formData, setFormData] = useState(getDefaultFormData());
+    const [activePreset, setActivePreset] = useState<MaterialTestPresetId>(initialForm.preset);
+    const [formData, setFormData] = useState(initialForm.values);
     const [form] = Form.useForm();
+    const presets = getMaterialTestPresets(toolHeadIdentifier).map((item) => ({
+        id: item.id,
+        label: i18n._(item.labelKey),
+    }));
 
     useEffect(() => {
         if (!_.isNull(toolParams) && !_.isNull(gcodeConfig)) {
@@ -120,7 +111,24 @@ const MaterialTestConfigurations: React.FC<MaterialTestConfigurationsProps> = ({
     }, [form, formData]);
     const saveFormData = (nFormData: any) => {
         setFormData(nFormData);
-        editorStore.set(`${HEAD_LASER}LastMaterialTest`, JSON.stringify(nFormData));
+        editorStore.set(materialTestStorageKey(toolHeadIdentifier), JSON.stringify({
+            ...nFormData,
+            preset: activePreset,
+        }));
+    };
+    const applyPreset = (presetId: MaterialTestPresetId) => {
+        const preset = getMaterialTestPreset(toolHeadIdentifier, presetId);
+        const currentFields = Object.fromEntries(
+            Object.entries(form.getFieldsValue()).filter(([, value]) => value !== undefined && value !== null && value !== '')
+        );
+        const next = {
+            ...formData,
+            ...currentFields,
+            ...preset.range,
+        };
+        setActivePreset(presetId);
+        setFormData(next);
+        form.setFieldsValue(next);
     };
 
     const actions = {
@@ -270,8 +278,11 @@ const MaterialTestConfigurations: React.FC<MaterialTestConfigurationsProps> = ({
                     {i18n._('key-Laser/MainToolBar-MaterialTesting')}
                     {/* </Modal.Title> */}
                 </Modal.Header>
-                <Modal.Body style={{ height: '592px', width: '470px', overflow: 'initial' }}>
+                <Modal.Body style={{ height: '636px', width: '470px', overflow: 'initial' }}>
                     <MaterialTestParameters
+                        presets={presets}
+                        activePreset={activePreset}
+                        onPresetChange={applyPreset}
                         setCurrentToolDefinition={(definition) => actions.setToolDefinitionAndRemember(definition)}
                         gcodeConfig={gcodeConfig}
                         toolDefinitions={toolDefinitions}

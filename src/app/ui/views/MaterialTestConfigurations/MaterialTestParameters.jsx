@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { includes } from 'lodash';
 import { connect } from 'react-redux';
 
-import { Col, Divider, Form, InputNumber, Row } from 'antd';
+import { Col, Divider, Form, InputNumber, Radio, Row } from 'antd';
 import MaterialTestGcodeParams from './MaterialTestGcodeParams';
 import { L20WLaserToolModule, L40WLaserToolModule } from '../../../machines/snapmaker-2-toolheads';
 import formStyles from './FormStyles.styl';
@@ -23,6 +23,12 @@ class MaterialTestParameters extends PureComponent {
         form: PropTypes.object.isRequired,
         materials: PropTypes.object.isRequired,
         isModel: PropTypes.bool,
+        presets: PropTypes.arrayOf(PropTypes.shape({
+            id: PropTypes.string.isRequired,
+            label: PropTypes.string.isRequired,
+        })).isRequired,
+        activePreset: PropTypes.string.isRequired,
+        onPresetChange: PropTypes.func.isRequired,
 
         activeMachine: PropTypes.object,
         toolHeadIdentifier: PropTypes.string,
@@ -85,7 +91,7 @@ class MaterialTestParameters extends PureComponent {
     };
 
     render() {
-        const { activeMachine, toolHeadIdentifier, form } = this.props;
+        const { activeMachine, toolHeadIdentifier, form, presets, activePreset, onPresetChange } = this.props;
 
         const speedFormItems = [
             { name: 'rectRows', label: i18n._('key_ui-views-MaterialTestModal-FormComponent-rowCount'), component: <InputNumber className={formStyles.input} min={1} max={11} name="rectRows" /> },
@@ -147,6 +153,19 @@ class MaterialTestParameters extends PureComponent {
         return (
             <React.Fragment>
                 <div className="border-default-grey-1 border-radius-8 padding-vertical-8 padding-horizontal-16">
+                    {presets.length > 1 && (
+                        <Radio.Group
+                            className={formStyles['preset-group']}
+                            value={activePreset}
+                            onChange={(event) => onPresetChange(event.target.value)}
+                        >
+                            {presets.map((preset) => (
+                                <Radio.Button key={preset.id} value={preset.id}>
+                                    {preset.label}
+                                </Radio.Button>
+                            ))}
+                        </Radio.Group>
+                    )}
                     <Form id="formIDataBox" form={form} labelCol={{ span: 12 }} wrapperCol={{ span: 12 }}>
                         <Row gutter={24}>
                             <Col span={12}>
