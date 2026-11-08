@@ -26,7 +26,7 @@ import ScheduledTasks from '../../lib/ScheduledTasks';
 import SocketServer from '../../lib/SocketManager';
 import logger from '../../lib/logger';
 import ProtocolDetector, { NetworkProtocol, SerialPortProtocol } from './ProtocolDetector';
-import Channel, {
+import {
     AirPurifierChannelInterface,
     CncChannelInterface,
     EnclosureChannelInterface,
@@ -110,7 +110,9 @@ class ConnectionManager {
     private protocol: NetworkProtocol | SerialPortProtocol = NetworkProtocol.Unknown;
 
     // channel used to communicate with machine
-    private channel: Channel = null;
+    // Concrete channels expose many protocol methods not declared on the base Channel type.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private channel: any = null;
 
     // connected machine instance to handle life cycle
     private machineInstance: MachineInstance = null;

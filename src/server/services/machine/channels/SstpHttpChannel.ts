@@ -44,7 +44,9 @@ interface Result {
     code: number;
     msg: string;
     text?: string;
-    data?: object;
+    // HTTP payloads vary by endpoint; keep loose so callers can read fields.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data?: any;
 }
 const _getResult = (err, res: request.Response): Result => {
     if (err) {
@@ -317,7 +319,7 @@ class SstpHttpChannel extends Channel implements
         this.heartBeatWorker = workerManager.heartBeat([{
             host: this.host,
             token: this.token
-        }], (result: object) => {
+        }], (result: any) => {
             if (result.status === 'offline') {
                 log.info(`[wifi connection offline]: msg=${result.msg}`);
                 this.clearAllInterval();

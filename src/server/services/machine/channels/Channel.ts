@@ -60,8 +60,9 @@ export default class Channel extends EventEmitter {
         return Promise.resolve();
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public async stopHeartbeat(id?: string): Promise<void> {
-        return Promise.resolve(id);
+        return Promise.resolve();
     }
 
     /**
