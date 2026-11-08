@@ -15,6 +15,7 @@ const TASK_STATUS_COMPLETED = 'completed';
 
 export const TASK_TYPE_GENERATE_TOOLPATH = 'generateToolPath';
 export const TASK_TYPE_GENERATE_VIEWPATH = 'generateViewPath';
+export const TASK_TYPE_GENERATE_SOLID_SIMULATION = 'generateSolidSimulation';
 export const TASK_TYPE_GENERATE_GCODE = 'generateGcode';
 export const TASK_TYPE_PROCESS_IMAGE = 'processImage';
 export const TASK_TYPE_CUT_MODEL = 'cutModel';
@@ -27,6 +28,7 @@ const TASK_TYPE_RUNNER_MAP = {
     [TASK_TYPE_GENERATE_TOOLPATH]: 'generateToolPath',
     [TASK_TYPE_GENERATE_GCODE]: 'generateGcode',
     [TASK_TYPE_GENERATE_VIEWPATH]: 'generateViewPath',
+    [TASK_TYPE_GENERATE_SOLID_SIMULATION]: 'generateSolidSimulation',
     [TASK_TYPE_PROCESS_IMAGE]: 'processImage',
     [TASK_TYPE_CUT_MODEL]: 'cutModel',
     [TASK_TYPE_CLIPPING_SVG]: 'svgClipping',
@@ -79,6 +81,8 @@ class TaskManager {
             task.gcodeFile = gcodeFile as TGcodeFile;
         } else if (task.taskType === TASK_TYPE_GENERATE_VIEWPATH) {
             task.viewPathFile = (res as { viewPathFile: string }).viewPathFile;
+        } else if (task.taskType === TASK_TYPE_GENERATE_SOLID_SIMULATION) {
+            task.result = res;
         } else if (task.taskType === TASK_TYPE_PROCESS_IMAGE) {
             const { filename, width, height } = res as {
                 filename: string, width: string, height: string
@@ -201,6 +205,10 @@ const addGenerateViewPathTask = (socket, task) => {
     manager.addTask(new Task(task.taskId, socket, task.data, TASK_TYPE_GENERATE_VIEWPATH, task.headType));
 };
 
+const addGenerateSolidSimulationTask = (socket, task) => {
+    manager.addTask(new Task(task.taskId, socket, task.data, TASK_TYPE_GENERATE_SOLID_SIMULATION, task.headType));
+};
+
 const addProcessImageTask = (socket, task) => {
     manager.addTask(new Task(task.taskId, socket, task.data, TASK_TYPE_PROCESS_IMAGE, task.headType));
 };
@@ -223,6 +231,7 @@ export default {
     addProcessImageTask,
     addCutModelTask,
     addGenerateViewPathTask,
+    addGenerateSolidSimulationTask,
     cancelTask,
     addSVGClipping
 };

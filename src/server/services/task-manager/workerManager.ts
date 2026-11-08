@@ -7,6 +7,7 @@ export enum WorkerMethods {
     generateGcode = 'generateGcode',
     generateToolPath = 'generateToolPath',
     generateViewPath = 'generateViewPath',
+    generateSolidSimulation = 'generateSolidSimulation',
     heartBeat = 'heartBeat',
     loadSize = 'loadSize',
     processImage = 'processImage',

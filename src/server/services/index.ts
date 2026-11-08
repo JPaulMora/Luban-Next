@@ -61,11 +61,13 @@ function startServices(server) {
     // task manager
     socketServer.registerEvent('taskCommit:generateToolPath', TaskManager.addGenerateToolPathTask);
     socketServer.registerEvent('taskCommit:generateViewPath', TaskManager.addGenerateViewPathTask);
+    socketServer.registerEvent('taskCommit:generateSolidSimulation', TaskManager.addGenerateSolidSimulationTask);
     socketServer.registerEvent('taskCommit:generateGcode', TaskManager.addGenerateGcodeTask);
     socketServer.registerEvent('taskCommit:processImage', TaskManager.addProcessImageTask);
     socketServer.registerEvent('taskCommit:svgClipping', TaskManager.addSVGClipping);
     socketServer.registerEvent('taskCommit:cutModel', TaskManager.addCutModelTask);
     socketServer.registerEvent('taskCancel:cutModel', TaskManager.cancelTask);
+    socketServer.registerEvent('taskCancel:generateSolidSimulation', TaskManager.cancelTask);
 
     socketServer.registerChannel('get-free-memory', system.getSystemFreeMemorySize);
 
