@@ -113,7 +113,9 @@ class ToolPath {
         this.visible = visible;
         this.check = check;
         this.object.visible = visible;
-        this.visibleModelIDs = (visibleModelIDs || modelIDs).map((v) => v);
+        // modelIDs lists every linked model, hidden ones too. visibleModelIDs
+        // leaves hidden models out; files without modelIDs still use it.
+        this.visibleModelIDs = (modelIDs || visibleModelIDs).map((v) => v);
 
         for (const modelID of this.visibleModelIDs) {
             this.modelMap.set(modelID, {
@@ -232,6 +234,7 @@ class ToolPath {
             modelMode: this.modelMode,
             // object: this.object,
             visibleModelIDs: this.visibleModelIDs,
+            modelIDs: [...this.modelMap.keys()],
             toolPathFiles: this.visibleModelIDs.map(
                 (v) => this.modelMap.get(v)?.toolPathFile
             ),
