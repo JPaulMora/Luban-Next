@@ -99,6 +99,9 @@ const ObjectListBox: React.FC<ObjectListBoxProps> = ({ headType }) => {
             } else {
                 dispatch(editorActions.showSelectedModel(headType, model));
             }
+        },
+        onClickModelLockBox(model) {
+            dispatch(editorActions.setModelLocked(headType, model, !model.locked));
         }
     };
 
@@ -153,6 +156,8 @@ const ObjectListBox: React.FC<ObjectListBoxProps> = ({ headType }) => {
                                     isSelected={selectedModelArray && selectedModelArray.includes(model)}
                                     onSelect={onSelectItem}
                                     onToggleVisible={actions.onClickModelHideBox}
+                                    locked={model.locked}
+                                    onToggleLocked={actions.onClickModelLockBox}
                                     inProgress={inProgress}
                                     placement="right"
                                 />

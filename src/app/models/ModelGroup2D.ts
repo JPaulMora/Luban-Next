@@ -191,6 +191,15 @@ class ModelGroup2D extends EventEmitter {
         return this.getState();
     }
 
+    public setModelLocked(models: TModel[], locked: boolean) {
+        models.forEach((model) => {
+            model.locked = locked;
+        });
+
+        // Make the reference of 'models' change to re-render
+        this.models = [...this.models];
+    }
+
     public hideSelectedModel(targetModels: TModel[] = null) {
         const models = targetModels || this.getSelectedModelArray();
         return this.setModelVisibility(models, false);

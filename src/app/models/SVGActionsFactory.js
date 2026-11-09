@@ -646,7 +646,7 @@ class SVGActionsFactory {
         const nodes = [];
         for (const node of childNodes) {
             const svgModel = this.getSVGModelByElement(node);
-            if (svgModel !== null && svgModel?.visible) {
+            if (svgModel !== null && svgModel?.visible && !svgModel.locked) {
                 // this.selectElements([node]);
                 nodes.push(node);
             }
@@ -753,8 +753,10 @@ class SVGActionsFactory {
         if (this.selectedSvgModels.length === 0) {
             return false;
         }
+        // A locked model selected from the object list is not dragged from the
+        // canvas; a click on it goes to the model below.
         return this.selectedSvgModels.some((model) => {
-            return isInside(point, model.vertexPoints);
+            return !model.locked && isInside(point, model.vertexPoints);
         });
     }
 

@@ -960,7 +960,7 @@ export const actions = {
         headType,
         {
             originalName, uploadName, sourceWidth, sourceHeight, mode, sourceType,
-            config, gcodeConfig, transformation, modelID, zIndex, isLimit, loadFrom, processImageName, visible
+            config, gcodeConfig, transformation, modelID, zIndex, isLimit, loadFrom, processImageName, visible, locked
         }
     ) => async (dispatch, getState) => {
         const { size, promptDamageModel } = getState().machine;
@@ -1118,6 +1118,9 @@ export const actions = {
             modelGroup.hideSelectedModel([model]);
             SVGActions.hideSelectedElement();
         }
+        if (locked) {
+            modelGroup.setModelLocked([model], true);
+        }
 
         if (path.extname(uploadName).toLowerCase() === '.stl') {
             dispatch(actions.prepareStlVisualizer(headType, model));
@@ -1195,9 +1198,10 @@ export const actions = {
             const svgDateElem = models[0].elem?.parentElement;
             const svgDateElemChilds = svgDateElem?.children ? Array.from(svgDateElem?.children) : [];
             if (svgDateElem && svgDateElemChilds) {
+                // A click goes through a locked model to the one below it.
                 const arr = models
                     .filter(model => {
-                        return model.visible;
+                        return model.visible && !model.locked;
                     })
                     .sort((a, b) => {
                         return svgDateElemChilds.findIndex(elem => elem === b.elem) - svgDateElemChilds.findIndex(elem => elem === a.elem);
@@ -1800,6 +1804,19 @@ export const actions = {
             dispatch(actions.resetProcessState(headType));
             dispatch(baseActions.render(headType));
         }
+    },
+
+    // Lock or unlock a model from the object list. Locking also drops the
+    // selection if it holds the model, so the canvas cannot move it by accident.
+    setModelLocked: (headType: HeadType, model, locked: boolean) => (dispatch, getState) => {
+        const { modelGroup } = getState()[headType];
+
+        modelGroup.setModelLocked([model], locked);
+        if (locked && modelGroup.getSelectedModelArray().includes(model)) {
+            dispatch(actions.clearSelection(headType));
+        }
+        dispatch(projectActions.autoSaveEnvironment(headType));
+        dispatch(baseActions.render(headType));
     },
 
     hideSelectedModel: (headType, model) => (dispatch, getState) => {
@@ -3287,7 +3304,8 @@ export const actions = {
                         width,
                         height,
                         vertexPoints: model.vertexPoints,
-                        visible: model.visible
+                        // The worker skips models that are not visible; box select skips locked ones too.
+                        visible: model.visible && !model.locked
                     };
                 }),
                 onlyContainSelect,

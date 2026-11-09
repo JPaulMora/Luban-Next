@@ -86,6 +86,7 @@ export type ModelInfo = {
     },
     mode: TMode,
     visible?: boolean,
+    locked?: boolean,
     transformation?: ModelTransformation,
     processImageName?: string,
     type?: string,
@@ -130,6 +131,9 @@ abstract class BaseModel {
     public size: TSize;
     public transformation: ModelTransformation = DEFAULT_TRANSFORMATION;
     public visible = true;
+    // A locked laser or CNC model is skipped by clicks, box select and Select All
+    // on the canvas. It is still cut, and the object list can still select it.
+    public locked = false;
 
     public boundingBox: Box2;
     public limitSize: number;

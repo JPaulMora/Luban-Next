@@ -34,6 +34,7 @@ ModelIcon.propTypes = {
 function ModelItem(
     {
         model, visible, isSelected, styles, onSelect, onToggleVisible,
+        locked = false, onToggleLocked,
         inProgress, placement, disabled = false,
     }
 ) {
@@ -105,6 +106,16 @@ function ModelItem(
                             {suffixName}
                         </span>
                     </Anchor>
+                    {onToggleLocked && (
+                        <SvgIcon
+                            name={locked ? 'LockNormal' : 'UnlockNormal'}
+                            title={locked ? i18n._('key-PrintingCncLaser/ObjectList-Unlock') : i18n._('key-PrintingCncLaser/ObjectList-Lock')}
+                            color={locked ? '#545659' : '#B9BCBF'}
+                            onClick={() => onToggleLocked(model)}
+                            disabled={inProgress || disabled}
+                            type={['static']}
+                        />
+                    )}
                     <SvgIcon
                         className="margin-right-8"
                         name={visible ? 'ShowNormal' : 'HideNormal'}
@@ -128,6 +139,8 @@ ModelItem.propTypes = {
     isSelected: PropTypes.bool.isRequired,
     onSelect: PropTypes.func.isRequired,
     onToggleVisible: PropTypes.func.isRequired,
+    locked: PropTypes.bool,
+    onToggleLocked: PropTypes.func,
     inProgress: PropTypes.bool.isRequired,
     disabled: PropTypes.bool,
     placement: PropTypes.string,
