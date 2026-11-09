@@ -1,8 +1,17 @@
+import logger from '../../logger';
 import { cellCenterX, cellCenterY, floorZ } from './dexelStock';
 import type { DexelStock } from './dexelStock';
 import type { MeshBuffers } from './types';
 
-const CARVE_EPS = 1e-4;
+const log = logger('cnc:solidSimulation');
+
+const CARVE_EPS = 1e-4; // used to detect any carved cell for ROI
+
+// A full-bed 0.1 mm relief is ~2 million cells. One quad per cell is too
+// large for the renderer to parse (Atitlan was ~8 million vertices and the
+// preview stayed at 95%). Carve resolution stays 0.1 mm; the display mesh
+// samples blocks so the quad count stays under this cap.
+const DISPLAY_MAX_QUADS = 90000;
 
 type PushVertex = (x: number, y: number, z: number, nx: number, ny: number, nz: number) => number;
 type PushTri = (a: number, b: number, c: number) => void;
@@ -32,6 +41,37 @@ function makeBuilders(positions: number[], normals: number[], indices: number[])
         pushTri(a, c, d);
     };
     return { pushVertex, pushTri, pushQuad };
+}
+
+function sampleIndices(start: number, end: number, step: number): number[] {
+    const out = [start];
+    if (end === start) {
+        return out;
+    }
+    for (let i = start + step; i < end; i += step) {
+        out.push(i);
+    }
+    if (out[out.length - 1] !== end) {
+        out.push(end);
+    }
+    return out;
+}
+
+/** Deepest surface in the step×step block whose corner is this cell. */
+function minZInBlock(stock: DexelStock, ix: number, iy: number, step: number): number {
+    const x1 = Math.min(stock.nx, ix + Math.max(1, step));
+    const y1 = Math.min(stock.ny, iy + Math.max(1, step));
+    let minZ = 0;
+    for (let y = iy; y < y1; y++) {
+        const row = y * stock.nx;
+        for (let x = ix; x < x1; x++) {
+            const value = stock.z[row + x];
+            if (value < minZ) {
+                minZ = value;
+            }
+        }
+    }
+    return minZ;
 }
 
 function stockBoxMesh(stock: DexelStock): MeshBuffers {
@@ -92,27 +132,38 @@ export function dexelToMesh(stock: DexelStock): MeshBuffers {
     const indices: number[] = [];
     const { pushVertex, pushTri, pushQuad } = makeBuilders(positions, normals, indices);
 
-    for (let iy = iy0; iy < iy1; iy++) {
-        for (let ix = ix0; ix < ix1; ix++) {
-            const i00 = iy * nx + ix;
-            const i10 = iy * nx + (ix + 1);
-            const i01 = (iy + 1) * nx + ix;
-            const i11 = (iy + 1) * nx + (ix + 1);
+    const spanX = Math.max(1, ix1 - ix0);
+    const spanY = Math.max(1, iy1 - iy0);
+    const step = spanX * spanY > DISPLAY_MAX_QUADS
+        ? Math.ceil(Math.sqrt((spanX * spanY) / DISPLAY_MAX_QUADS))
+        : 1;
+    if (step > 1) {
+        log.info(
+            `dexel mesh display step=${step} (${(step * stock.cellMm).toFixed(2)} mm) `
+            + `from ${spanX}x${spanY} cells`
+        );
+    }
 
-            const z00 = z[i00];
-            const z10 = z[i10];
-            const z01 = z[i01];
-            const z11 = z[i11];
+    const xs = sampleIndices(ix0, ix1, step);
+    const ys = sampleIndices(iy0, iy1, step);
+    const sampleZ = (ix: number, iy: number) => minZInBlock(stock, ix, iy, step);
 
-            // Skip completely uncarved flat quads
-            if (z00 >= -CARVE_EPS && z10 >= -CARVE_EPS && z01 >= -CARVE_EPS && z11 >= -CARVE_EPS) {
-                continue;
-            }
+    for (let j = 0; j < ys.length - 1; j++) {
+        for (let i = 0; i < xs.length - 1; i++) {
+            const ix = xs[i];
+            const ixNext = xs[i + 1];
+            const iy = ys[j];
+            const iyNext = ys[j + 1];
+
+            const z00 = sampleZ(ix, iy);
+            const z10 = sampleZ(ixNext, iy);
+            const z01 = sampleZ(ix, iyNext);
+            const z11 = sampleZ(ixNext, iyNext);
 
             const x0 = cellCenterX(stock, ix);
-            const x1 = cellCenterX(stock, ix + 1);
+            const x1 = cellCenterX(stock, ixNext);
             const y0 = cellCenterY(stock, iy);
-            const y1 = cellCenterY(stock, iy + 1);
+            const y1 = cellCenterY(stock, iyNext);
 
             const ax = x1 - x0;
             const az = z10 - z00;

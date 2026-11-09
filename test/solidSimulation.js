@@ -292,6 +292,30 @@ test('dexelToMesh crops to carved region on large stock', (t) => {
     t.end();
 });
 
+test('dexelToMesh decimates a full-bed carve for display', (t) => {
+    const stock = createDexelStock(
+        { minX: 0, maxX: 400, minY: 0, maxY: 400, stockDepth: 10 },
+        1,
+    );
+    stock.z.fill(-2);
+    const mesh = dexelToMesh(stock);
+    const verts = mesh.positions.length / 3;
+    // One quad per cell would be ~640k vertices. Display step keeps it meshable.
+    t.ok(verts < 200000, `verts=${verts}`);
+    t.ok(mesh.indices.length >= 3);
+    // Floor sits at -stockDepth. A display sample of the carved top is near -2.
+    let sawCarvedSurface = false;
+    for (let i = 2; i < mesh.positions.length; i += 3) {
+        const z = mesh.positions[i];
+        if (z <= -2 && z > -9) {
+            sawCarvedSurface = true;
+            break;
+        }
+    }
+    t.ok(sawCarvedSurface, 'display mesh kept the carved depth');
+    t.end();
+});
+
 test('stockSpecFromSegments fits XY to toolpath not machine bed', (t) => {
     const { stockSpecFromSegments } = require('../src/server/lib/cnc/solidSimulation');
     const spec = stockSpecFromSegments(
