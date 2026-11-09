@@ -710,11 +710,16 @@ export const processActions = {
 
         const stockDepth = (materials && materials.z > 0) ? materials.z : 10;
         const size = coordinateSize || { x: 100, y: 100 };
+        // Match heightfield preview: workpiece origin offset (coorDelta)
+        const { coordinateMode } = state;
+        const mf = coordinateMode?.setting?.sizeMultiplyFactor || { x: 0, y: 0 };
+        const dx = (size.x / 2) * mf.x;
+        const dy = (size.y / 2) * mf.y;
         const stock = {
-            minX: -size.x / 2,
-            maxX: size.x / 2,
-            minY: -size.y / 2,
-            maxY: size.y / 2,
+            minX: -size.x / 2 + dx,
+            maxX: size.x / 2 + dx,
+            minY: -size.y / 2 + dy,
+            maxY: size.y / 2 + dy,
             stockDepth,
         };
 

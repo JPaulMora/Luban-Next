@@ -2,6 +2,7 @@ import logger from '../../logger';
 import { carveDexelFromCommands } from './carveDexel';
 import { createDexelStock } from './dexelStock';
 import { dexelToMesh } from './dexelToMesh';
+import { stockSpecFromSegments } from './stockBounds';
 import { DEXEL_CELL_MM } from './types';
 import type {
     SolidSimResult,
@@ -29,6 +30,9 @@ export type RunSolidSimulationInput = {
 /**
  * Dexel carve at 0.1 mm: stamp each segment's bit along its moves into one
  * shared stock (multi-tool rough then finish), then mesh.
+ *
+ * Stock XY is fitted to the toolpath (not the machine bed origin) so workpiece
+ * coordinate modes and model placement do not clip the carve to a tiny overlap.
  */
 export function runSolidSimulation(input: RunSolidSimulationInput): SolidSimResult | null {
     const onProgress = input.onProgress || ((/* p */) => undefined);
@@ -48,9 +52,17 @@ export function runSolidSimulation(input: RunSolidSimulationInput): SolidSimResu
         return null;
     }
 
-    log.info(`dexel solid sim segments=${segments.length}`);
+    const fitted = stockSpecFromSegments(segments, input.stock.stockDepth);
+    const stockSpec = fitted || input.stock;
+    log.info(
+        `dexel solid sim segments=${segments.length} `
+        + `stock=[${stockSpec.minX.toFixed(2)},${stockSpec.minY.toFixed(2)}]`
+        + `-[${stockSpec.maxX.toFixed(2)},${stockSpec.maxY.toFixed(2)}] `
+        + `z=${stockSpec.stockDepth}`
+        + (fitted ? ' (fitted to toolpath)' : ' (client stock)')
+    );
 
-    const stock = createDexelStock(input.stock, cellMm);
+    const stock = createDexelStock(stockSpec, cellMm);
     let anyStamps = false;
 
     for (let i = 0; i < segments.length; i++) {
@@ -111,7 +123,7 @@ export function runSolidSimulation(input: RunSolidSimulationInput): SolidSimResu
     onProgress(1);
     return {
         ...mesh,
-        stockDepth: input.stock.stockDepth,
-        bounds: input.stock,
+        stockDepth: stockSpec.stockDepth,
+        bounds: stockSpec,
     };
 }

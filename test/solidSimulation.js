@@ -292,6 +292,48 @@ test('dexelToMesh crops to carved region on large stock', (t) => {
     t.end();
 });
 
+test('stockSpecFromSegments fits XY to toolpath not machine bed', (t) => {
+    const { stockSpecFromSegments } = require('../src/server/lib/cnc/solidSimulation');
+    const spec = stockSpecFromSegments(
+        [{
+            commands: [
+                { G: 1, X: 10, Y: 20, Z: -1 },
+                { G: 1, X: 40, Y: 50, Z: -1 },
+            ],
+            toolParams: { toolType: 'flat', toolDiameter: 4 },
+        }],
+        12,
+    );
+    t.ok(spec);
+    // pad = shaft radius 2 + 1
+    t.ok(spec.minX <= 10 - 2);
+    t.ok(spec.maxX >= 40 + 2);
+    t.ok(spec.minY <= 20 - 2);
+    t.ok(spec.maxY >= 50 + 2);
+    t.equal(spec.stockDepth, 12);
+
+    const result = runSolidSimulation({
+        segments: [{
+            commands: [
+                { M: 3 },
+                { G: 0, X: 100, Y: 100, Z: 2 },
+                { G: 1, Z: -2 },
+                { G: 1, X: 120, Y: 100 },
+                { G: 0, Z: 2 },
+                { M: 5 },
+            ],
+            toolParams: { toolType: 'flat', toolDiameter: 2 },
+        }],
+        // Deliberately wrong / machine-centered stock — sim must still carve the path
+        stock: { minX: -200, maxX: -100, minY: -200, maxY: -100, stockDepth: 8 },
+        cellMm: 0.5,
+    });
+    t.ok(result, 'fitted stock should capture path outside client stock');
+    t.ok(result.bounds.minX < 100);
+    t.ok(result.bounds.maxX > 120);
+    t.end();
+});
+
 test('writeMeshJson handles large arrays without stringify', (t) => {
     const fs = require('fs');
     const os = require('os');
