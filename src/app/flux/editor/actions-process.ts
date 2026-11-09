@@ -416,6 +416,7 @@ export const processActions = {
                 isChangedAfterGcodeGenerating: true
             })
         );
+        dispatch(projectActions.autoSaveEnvironment(headType));
     },
 
     /**
@@ -468,6 +469,7 @@ export const processActions = {
                 isChangedAfterGcodeGenerating: true
             })
         );
+        dispatch(projectActions.autoSaveEnvironment(headType));
     },
 
     toolPathToBottom: (headType, toolPathId) => (dispatch, getState) => {
@@ -478,6 +480,7 @@ export const processActions = {
                 isChangedAfterGcodeGenerating: true
             })
         );
+        dispatch(projectActions.autoSaveEnvironment(headType));
     },
 
     deleteToolPath: (headType, selectedToolPathIDArray) => (dispatch, getState) => {
