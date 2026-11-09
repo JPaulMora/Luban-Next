@@ -66,6 +66,7 @@ type SVGEditorProps = {
         moveElementsOnKeyDown: (elements, options) => void;
         isPointInSelectArea: (elements, options) => void;
         getMouseTargetByCoordinate: (elements, options) => void;
+        getMouseTargetsByCoordinate: (x: number, y: number) => SVGElement[];
         isSelectedAllVisible: (elements, options) => void;
     };
     onChangeFile: (event: MouseEvent) => void;

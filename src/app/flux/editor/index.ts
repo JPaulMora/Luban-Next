@@ -1191,7 +1191,15 @@ export const actions = {
         }));
     },
 
-    getMouseTargetByCoordinate: (headType, x, y) => (dispatch, getState) => {
+    getMouseTargetByCoordinate: (headType, x, y) => (dispatch) => {
+        const targets = dispatch(actions.getMouseTargetsByCoordinate(headType, x, y));
+        return targets.length > 0 ? targets[0] : null;
+    },
+
+    /**
+     * SVG elements of the models under (x, y), from the top of the stack down.
+     */
+    getMouseTargetsByCoordinate: (headType, x, y) => (dispatch, getState) => {
         const { modelGroup } = getState()[headType];
         const models = modelGroup.models;
         if (models.length > 0) {
@@ -1199,21 +1207,20 @@ export const actions = {
             const svgDateElemChilds = svgDateElem?.children ? Array.from(svgDateElem?.children) : [];
             if (svgDateElem && svgDateElemChilds) {
                 // A click goes through a locked model to the one below it.
-                const arr = models
+                return models
                     .filter(model => {
                         return model.visible && !model.locked;
                     })
                     .sort((a, b) => {
                         return svgDateElemChilds.findIndex(elem => elem === b.elem) - svgDateElemChilds.findIndex(elem => elem === a.elem);
-                    });
-                const index = arr.findIndex(model => {
-                    return isInside([x, y], model.vertexPoints);
-                });
-                return index === -1 ? null : arr[index]?.elem;
+                    })
+                    .filter(model => {
+                        return isInside([x, y], model.vertexPoints);
+                    })
+                    .map(model => model.elem);
             }
-            return null;
         }
-        return null;
+        return [];
     },
 
     // TODO: method docs
