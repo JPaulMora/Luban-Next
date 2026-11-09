@@ -175,7 +175,9 @@ class ToolPath {
 
         if (ids.length === 0 && this.baseName) {
             const named = models.find((item) => this.uploadNameOf(item) === this.baseName);
-            const linkedUploads = this.visibleModelIDs.map((id) => {
+            // Check every linked model. A hidden model is still linked; it is
+            // only left out of visibleModelIDs.
+            const linkedUploads = [...this.modelMap.keys()].map((id) => {
                 const model = models.find((item) => item.modelID === id);
                 return this.uploadNameOf(model);
             });
