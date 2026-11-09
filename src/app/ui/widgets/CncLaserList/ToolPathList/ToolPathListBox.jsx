@@ -24,6 +24,7 @@ import {
 } from '../../../../constants';
 import ContextMenu from '../../../components/ContextMenu';
 import { getModelColorPalette } from '../../../../toolpaths/utils';
+import { toolpathLineColorCss } from '../../../../toolpaths/toolpathColors';
 import { ColorSwatchChips } from '../../../views/ToolPathConfigurations/laser/ColorSwatches';
 
 
@@ -89,6 +90,7 @@ const ToolpathItem = ({
                         'width-254',
                         'align-l',
                         'sm-flex',
+                        'align-center',
                         'sm-flex-width',
                         'margin-left-16',
                         'margin-right-16',
@@ -96,6 +98,22 @@ const ToolpathItem = ({
                     onDoubleClick={handleOnDoubleClick}
                     onClick={handleOnClick}
                 >
+                    {toolPath.previewColor && (
+                        <span
+                            title={i18n._('Toolpath color')}
+                            style={{
+                                display: 'inline-block',
+                                width: 12,
+                                height: 12,
+                                borderRadius: 2,
+                                background: toolpathLineColorCss(toolPath.previewColor),
+                                border: '1px solid #B9BCBF',
+                                marginRight: 8,
+                                flexShrink: 0,
+                                alignSelf: 'center'
+                            }}
+                        />
+                    )}
                     <span className={classNames(styles['prefix-name'])}>
                         {prefixName}
                     </span>

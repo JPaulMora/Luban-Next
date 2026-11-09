@@ -48,3 +48,21 @@ export const MATERIAL_SELECTED = new THREE.ShaderMaterial({
     opacity: 0.9,
     linewidth: 1
 });
+
+// One material per line. The preview used to share MATERIAL_SELECTED, so
+// selecting any path turned every path the same blue.
+export function createToolpathMaterial(selected = false) {
+    return new THREE.ShaderMaterial({
+        uniforms: {
+            u_g1_color: new THREE.Uniform(new THREE.Vector4(0, 0, 0, 1)),
+            u_select_color: new THREE.Uniform(new THREE.Vector4(0.156, 0.655, 0.882, 1)),
+            u_selected: { value: selected }
+        },
+        vertexShader: CNC_LASER_VERT_SHADER,
+        fragmentShader: CNC_LASER_FRAG_SELECT_SHADER,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.9,
+        linewidth: 1
+    });
+}

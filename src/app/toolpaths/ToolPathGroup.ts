@@ -8,6 +8,7 @@ import { SolidSimRenderer } from '../lib/renderer/SolidSimRenderer';
 import { generateModelDefaultConfigs } from '../models/ModelInfoUtils';
 import ThreeModel from '../models/ThreeModel';
 import ToolPath from './ToolPath';
+import { toolpathLineColor } from './toolpathColors';
 import { SUCCESS, createToolPathNameByType, getModelsByToolPathType, getToolPathType } from './utils';
 
 class ToolPathGroup {
@@ -199,6 +200,7 @@ class ToolPathGroup {
     }
 
     public getToolPaths() {
+        this.ensurePreviewColors();
         return this._getToolPaths().map(v => v.getState());
     }
 
@@ -281,14 +283,29 @@ class ToolPathGroup {
         return null;
     }
 
+    public ensurePreviewColors() {
+        if (this.headType !== 'cnc') {
+            return;
+        }
+        this.toolPaths.forEach((toolPath, index) => {
+            if (!toolPath.previewColor) {
+                toolPath.previewColor = toolpathLineColor(index);
+            }
+            toolPath.applyPreviewColorToLines();
+        });
+    }
+
     public saveToolPath(toolPathInfo, options, shouldCommitGenerate = true) {
         let toolPath = this._getToolPath(toolPathInfo.id);
         if (toolPath) {
             toolPath.updateState({ ...toolPathInfo, ...options });
         } else {
+            const previewColor = toolPathInfo.previewColor
+                || (this.headType === 'cnc' ? toolpathLineColor(this.toolPaths.length) : null);
             toolPath = new ToolPath({
                 ...toolPathInfo,
                 ...options,
+                previewColor,
                 modelGroup: this.modelGroup
             });
             this.toolPaths.push(toolPath);
@@ -480,6 +497,7 @@ class ToolPathGroup {
     }
 
     public getGenerateToolPathTask(toolPathId: string) {
+        this.ensurePreviewColors();
         let task = null;
         const toolPath = this._getToolPath(toolPathId);
         if (toolPath) {

@@ -19,7 +19,7 @@ export function ColorSwatchChips({ colorFilter }) {
         return null;
     }
     return (
-        <span className="sm-flex margin-left-8">
+        <span className="sm-flex align-center margin-left-8">
             {colorFilter.slice(0, 6).map((entry) => (
                 <span
                     key={`${entry.role}:${entry.hex}`}

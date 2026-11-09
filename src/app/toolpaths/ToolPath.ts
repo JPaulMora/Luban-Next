@@ -9,7 +9,9 @@ import log from '../lib/log';
 import ModelGroup from '../models/ModelGroup';
 import {
     MATERIAL_SELECTED,
+    createToolpathMaterial,
 } from '../workers/ShaderMaterial/ToolpathRendererMeterial';
+import { ToolpathLineColor } from './toolpathColors';
 import {
     FAILED,
     getToolPathType,
@@ -57,6 +59,10 @@ class ToolPath {
 
     public colorFilter: Array<{ role: 'fill' | 'stroke'; hex: string }> = [];
 
+    public previewColor: ToolpathLineColor | null = null;
+
+    private appliedPreviewColorKey = '';
+
     public toolParams;
 
     public materials;
@@ -80,6 +86,7 @@ class ToolPath {
             modelIDs,
             gcodeConfig,
             colorFilter = [],
+            previewColor = null,
             toolParams = {},
             materials = {},
             origin = {
@@ -110,6 +117,7 @@ class ToolPath {
 
         this.gcodeConfig = { ...gcodeConfig };
         this.colorFilter = Array.isArray(colorFilter) ? colorFilter.map(entry => ({ ...entry })) : [];
+        this.previewColor = Array.isArray(previewColor) ? [previewColor[0], previewColor[1], previewColor[2]] : null;
         this.toolParams = { ...toolParams };
         this.modelGroup = modelGroup;
 
@@ -221,6 +229,7 @@ class ToolPath {
                 ...this.gcodeConfig,
             },
             colorFilter: this.colorFilter.map(entry => ({ ...entry })),
+            previewColor: this.previewColor ? [...this.previewColor] : null,
             toolParams: {
                 ...this.toolParams,
             },
@@ -250,6 +259,7 @@ class ToolPath {
             useLegacyEngine = this.useLegacyEngine,
             gcodeConfig = this.gcodeConfig,
             colorFilter = this.colorFilter,
+            previewColor = this.previewColor,
             toolParams = this.toolParams,
             materials = this.materials,
             visibleModelIDs = this.visibleModelIDs,
@@ -265,6 +275,9 @@ class ToolPath {
             ...gcodeConfig,
         };
         this.colorFilter = Array.isArray(colorFilter) ? colorFilter.map(entry => ({ ...entry })) : [];
+        if (Array.isArray(previewColor)) {
+            this.previewColor = [previewColor[0], previewColor[1], previewColor[2]];
+        }
         this.toolParams = {
             ...toolParams,
         };
@@ -565,6 +578,55 @@ class ToolPath {
         }
     }
 
+    public applyPreviewColorToLines() {
+        if (this.headType !== 'cnc' || !this.previewColor) {
+            return;
+        }
+        const key = this.previewColor.join(',');
+        if (this.appliedPreviewColorKey === key) {
+            return;
+        }
+        const [red, green, blue] = this.previewColor;
+        this.object.traverse((child) => {
+            const line = child as THREE.Line;
+            const geometry = line.geometry;
+            const gCodes = geometry && geometry.getAttribute('a_g_code');
+            const colors = geometry && geometry.getAttribute('a_color');
+            if (!gCodes || !colors) {
+                return;
+            }
+            for (let i = 0; i < gCodes.count; i++) {
+                if (gCodes.getX(i) === 0) {
+                    continue;
+                }
+                colors.setXYZ(i, red, green, blue);
+            }
+            colors.needsUpdate = true;
+            if (line.material === MATERIAL_SELECTED) {
+                line.material = createToolpathMaterial(false);
+            }
+        });
+        this.appliedPreviewColorKey = key;
+    }
+
+    private coloredLineBytes(colors, gCodes) {
+        const source = colors instanceof Uint8Array ? colors : new Uint8Array(colors);
+        if (this.headType !== 'cnc' || !this.previewColor) {
+            return source;
+        }
+        const bytes = new Uint8Array(source);
+        const [red, green, blue] = this.previewColor;
+        for (let i = 0; i < gCodes.length; i++) {
+            if (gCodes[i] === 0) {
+                continue;
+            }
+            bytes[i * 3] = red;
+            bytes[i * 3 + 1] = green;
+            bytes[i * 3 + 2] = blue;
+        }
+        return bytes;
+    }
+
     public renderToolpathObj(renderResult) {
         const {
             headType,
@@ -585,21 +647,26 @@ class ToolPath {
             3
         );
         const gCodeAttribute = new THREE.Float32BufferAttribute(gCodes.send, 1);
-        const colorsAttribute = new THREE.Uint8BufferAttribute(colors.send, 3);
+        const colorBytes = this.coloredLineBytes(colors.send, gCodes.send);
+        if (this.previewColor) {
+            this.appliedPreviewColorKey = this.previewColor.join(',');
+        }
+        const colorsAttribute = new THREE.Uint8BufferAttribute(colorBytes, 3);
         colorsAttribute.normalized = true;
         bufferGeometry.setAttribute('position', positionAttribute);
         bufferGeometry.setAttribute('a_g_code', gCodeAttribute);
         bufferGeometry.setAttribute('a_color', colorsAttribute);
 
+        const material = createToolpathMaterial(!!isSelected);
         let obj;
         if (headType === 'laser') {
             if (movementMode === 'greyscale-dot') {
-                obj = new THREE.Points(bufferGeometry, MATERIAL_SELECTED);
+                obj = new THREE.Points(bufferGeometry, material);
             } else {
-                obj = new THREE.Line(bufferGeometry, MATERIAL_SELECTED);
+                obj = new THREE.Line(bufferGeometry, material);
             }
         } else {
-            obj = new THREE.Line(bufferGeometry, MATERIAL_SELECTED);
+            obj = new THREE.Line(bufferGeometry, material);
         }
         if (isSelected) {
             obj.material.uniforms.u_selected.value = true;
