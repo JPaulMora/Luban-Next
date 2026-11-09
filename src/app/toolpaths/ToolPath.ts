@@ -83,6 +83,8 @@ class ToolPath {
             headType,
             type,
             useLegacyEngine = false,
+            visible = true,
+            check = true,
             modelMode,
             visibleModelIDs,
             modelIDs,
@@ -107,6 +109,10 @@ class ToolPath {
         this.type = type;
         this.status = IDLE;
         this.useLegacyEngine = useLegacyEngine;
+        // A tool path saved with its eye closed stays off, as updateState sets it.
+        this.visible = visible;
+        this.check = check;
+        this.object.visible = visible;
         this.visibleModelIDs = (visibleModelIDs || modelIDs).map((v) => v);
 
         for (const modelID of this.visibleModelIDs) {
