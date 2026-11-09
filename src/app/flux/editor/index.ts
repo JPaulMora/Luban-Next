@@ -1116,8 +1116,9 @@ export const actions = {
             dispatch(actions.prepareStlVisualizer(headType, model));
         }
 
-        // Recovered models already have a processed image in the project.
-        // Re-running it starts a second progress process that can stall preview.
+        // A recovered model keeps its processed image only when the file is in
+        // Tmp; onRecovery forgets the name otherwise. Re-running it starts a
+        // second progress process that can stall preview.
         if (loadFrom !== LOAD_MODEL_FROM_OUTER || !processImageName) {
             dispatch(actions.processSelectedModel(headType));
         }

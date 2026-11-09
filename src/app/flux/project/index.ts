@@ -10,6 +10,7 @@ import {
     COORDINATE_MODE_CENTER,
     COORDINATE_MODE_TOP_LEFT,
     COORDINATE_MODE_TOP_RIGHT,
+    DATA_PREFIX,
     DISPLAYED_TYPE_MODEL,
     HEAD_TYPE_ENV_NAME,
     LEFT_EXTRUDER,
@@ -81,6 +82,34 @@ const INITIAL_STATE = {
     },
 };
 const ACTION_UPDATE_STATE = 'EDITOR_ACTION_UPDATE_STATE';
+
+/**
+ * A project file keeps each upload and the parsed copy of an SVG, but not the
+ * processed image of a raster model, and Tmp is emptied at every start. Forget
+ * a processed image that is not in Tmp, so generateModel processes the model
+ * again, as Luban 4.15 does on every open.
+ */
+const forgetMissingProcessedImages = async (models) => {
+    const checks = [];
+    const visit = (list) => {
+        for (const model of list || []) {
+            if (model.processImageName) {
+                checks.push(
+                    fetch(`${DATA_PREFIX}/${model.processImageName}`, { method: 'HEAD' })
+                        .then((res) => res.ok, () => false)
+                        .then((exists) => {
+                            if (!exists) {
+                                delete model.processImageName;
+                            }
+                        })
+                );
+            }
+            visit(model.children);
+        }
+    };
+    visit(models);
+    await Promise.all(checks);
+};
 
 export const actions = {
     updateState: (headType, state) => {
@@ -374,6 +403,7 @@ export const actions = {
             if (!getState()[envHeadType].contentGroup) {
                 log.error(`Cannot recover ${envHeadType} project before the canvas is ready`);
             }
+            await forgetMissingProcessedImages(models);
         }
 
         // Recover models
