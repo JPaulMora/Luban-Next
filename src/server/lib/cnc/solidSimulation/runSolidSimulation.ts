@@ -54,12 +54,13 @@ export function runSolidSimulation(input: RunSolidSimulationInput): SolidSimResu
 
     const fitted = stockSpecFromSegments(segments, input.stock.stockDepth);
     const stockSpec = fitted || input.stock;
+    const minX = stockSpec.minX.toFixed(2);
+    const minY = stockSpec.minY.toFixed(2);
+    const maxX = stockSpec.maxX.toFixed(2);
+    const maxY = stockSpec.maxY.toFixed(2);
+    const where = fitted ? 'fitted to toolpath' : 'client stock';
     log.info(
-        `dexel solid sim segments=${segments.length} `
-        + `stock=[${stockSpec.minX.toFixed(2)},${stockSpec.minY.toFixed(2)}]`
-        + `-[${stockSpec.maxX.toFixed(2)},${stockSpec.maxY.toFixed(2)}] `
-        + `z=${stockSpec.stockDepth}`
-        + (fitted ? ' (fitted to toolpath)' : ' (client stock)')
+        `dexel solid sim segments=${segments.length} stock=[${minX},${minY}]-[${maxX},${maxY}] z=${stockSpec.stockDepth} (${where})`
     );
 
     const stock = createDexelStock(stockSpec, cellMm);
