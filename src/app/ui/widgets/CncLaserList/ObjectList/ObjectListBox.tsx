@@ -1,12 +1,12 @@
 import classNames from 'classnames';
-import React, { useEffect, useCallback, useRef, useState } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 
 import { actions as editorActions } from '../../../../flux/editor';
 import i18n from '../../../../lib/i18n';
 import modal from '../../../../lib/modal';
-import { editorStore } from '../../../../store/local-storage';
 import styles from '../styles.styl';
+import useListResize, { ResizeFunction } from '../useListResize';
 import ModelItem from './model-item';
 
 
@@ -37,12 +37,9 @@ const clampSize = (size: Partial<ListSize>): ListSize => {
     };
 };
 
-declare interface ResizeDrag {
-    x: number;
-    y: number;
-    size: ListSize;
-    resizeWidth: boolean;
-}
+// The list sits at the bottom left of the canvas, so it grows up and to the right.
+const growUp: ResizeFunction<ListSize> = (size, dx, dy) => ({ height: size.height - dy });
+const growUpAndRight: ResizeFunction<ListSize> = (size, dx, dy) => ({ width: size.width + dx, height: size.height - dy });
 
 const ObjectListBox: React.FC<ObjectListBoxProps> = ({ headType }) => {
     const selectedModelArray = useSelector(state => state[headType].modelGroup?.selectedModelArray);
@@ -53,50 +50,9 @@ const ObjectListBox: React.FC<ObjectListBoxProps> = ({ headType }) => {
 
     const dispatch = useDispatch();
 
-    const [size, setSize] = useState<ListSize>(() => clampSize(editorStore.get(SIZE_STORE_KEY, DEFAULT_SIZE)));
-    const sizeRef = useRef<ListSize>(size);
-    const dragRef = useRef<ResizeDrag | null>(null);
-
-    const updateSize = useCallback((nextSize: ListSize) => {
-        sizeRef.current = nextSize;
-        setSize(nextSize);
-    }, []);
-
-    // The list sits at the bottom left of the canvas, so it grows up and to the right.
-    const onResizeStart = useCallback((event: React.PointerEvent<HTMLDivElement>, resizeWidth: boolean) => {
-        if (event.button !== 0) {
-            return;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        event.currentTarget.setPointerCapture(event.pointerId);
-        dragRef.current = { x: event.clientX, y: event.clientY, size: sizeRef.current, resizeWidth };
-    }, []);
-
-    const onResizeMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-        const drag = dragRef.current;
-        if (!drag) {
-            return;
-        }
-        updateSize(clampSize({
-            width: drag.resizeWidth ? drag.size.width + event.clientX - drag.x : drag.size.width,
-            height: drag.size.height + drag.y - event.clientY,
-        }));
-    }, [updateSize]);
-
-    const onResizeEnd = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-        if (!dragRef.current) {
-            return;
-        }
-        dragRef.current = null;
-        event.currentTarget.releasePointerCapture(event.pointerId);
-        editorStore.set(SIZE_STORE_KEY, sizeRef.current);
-    }, []);
-
-    const onResizeReset = useCallback(() => {
-        updateSize(clampSize(DEFAULT_SIZE));
-        editorStore.set(SIZE_STORE_KEY, DEFAULT_SIZE);
-    }, [updateSize]);
+    const {
+        size: shownSize, onResizeStart, onResizeMove, onResizeEnd, onResizeReset
+    } = useListResize<ListSize>(SIZE_STORE_KEY, DEFAULT_SIZE, clampSize);
 
     const onSelectItem = useCallback((model, event) => {
         let isMultiSelect = event.shiftKey;
@@ -135,8 +91,6 @@ const ObjectListBox: React.FC<ObjectListBoxProps> = ({ headType }) => {
     }, [previewFailed]);
     const allModels = (models) && models.filter(model => !model.supportTag);
 
-    // Clamp again on render in case the window got smaller since the size was saved.
-    const shownSize = clampSize(size);
     const resizeTitle = i18n._('key-CncLaser/ObjectList-Drag to resize. Double-click to reset.');
 
     return (
@@ -147,7 +101,7 @@ const ObjectListBox: React.FC<ObjectListBoxProps> = ({ headType }) => {
             <div
                 className={styles['object-list-resize-top']}
                 title={resizeTitle}
-                onPointerDown={(event) => onResizeStart(event, false)}
+                onPointerDown={(event) => onResizeStart(event, growUp)}
                 onPointerMove={onResizeMove}
                 onPointerUp={onResizeEnd}
                 onPointerCancel={onResizeEnd}
@@ -156,7 +110,7 @@ const ObjectListBox: React.FC<ObjectListBoxProps> = ({ headType }) => {
             <div
                 className={styles['object-list-resize-corner']}
                 title={resizeTitle}
-                onPointerDown={(event) => onResizeStart(event, true)}
+                onPointerDown={(event) => onResizeStart(event, growUpAndRight)}
                 onPointerMove={onResizeMove}
                 onPointerUp={onResizeEnd}
                 onPointerCancel={onResizeEnd}
