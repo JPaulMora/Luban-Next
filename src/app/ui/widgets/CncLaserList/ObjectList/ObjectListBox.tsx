@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 
 import { actions as editorActions } from '../../../../flux/editor';
@@ -40,6 +40,38 @@ const clampSize = (size: Partial<ListSize>): ListSize => {
 // The list sits at the bottom left of the canvas, so it grows up and to the right.
 const growUp: ResizeFunction<ListSize> = (size, dx, dy) => ({ height: size.height - dy });
 const growUpAndRight: ResizeFunction<ListSize> = (size, dx, dy) => ({ width: size.width + dx, height: size.height - dy });
+
+// A row follows the pointer once it moved this far, so a click still selects.
+const DRAG_START_DISTANCE = 4;
+// Dragging this close to the top or bottom edge scrolls the list.
+const DRAG_SCROLL_EDGE = 16;
+const DRAG_SCROLL_STEP = 8;
+
+declare interface RowDrag {
+    model: { modelID: string };
+    pointerId: number;
+    startY: number;
+    active: boolean;
+}
+
+declare interface DropMark {
+    // The row moves before the row at this index; the row count means the end.
+    index: number;
+    top: number;
+}
+
+// Where a row dropped at clientY lands, and where the drop line goes.
+const dropMarkAt = (rowsElement: HTMLElement, clientY: number): DropMark => {
+    const rows = Array.from(rowsElement.querySelectorAll<HTMLElement>('[data-model-id]'));
+    for (let i = 0; i < rows.length; i++) {
+        const rect = rows[i].getBoundingClientRect();
+        if (clientY < rect.top + rect.height / 2) {
+            return { index: i, top: rows[i].offsetTop };
+        }
+    }
+    const last = rows[rows.length - 1];
+    return { index: rows.length, top: last ? last.offsetTop + last.offsetHeight : 0 };
+};
 
 const ObjectListBox: React.FC<ObjectListBoxProps> = ({ headType }) => {
     const selectedModelArray = useSelector(state => state[headType].modelGroup?.selectedModelArray);
@@ -89,6 +121,68 @@ const ObjectListBox: React.FC<ObjectListBoxProps> = ({ headType }) => {
         rangeAnchorRef.current = model;
         dispatch(editorActions.selectTargetModel(headType, model, isMultiSelect));
     }, [dispatch, headType, models, selectedModelArray]);
+
+    // Drag a row by its name to change the order. The list order is the laser
+    // order inside a tool path and the stack on the canvas, first at the bottom.
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const rowsRef = useRef<HTMLDivElement>(null);
+    const rowDragRef = useRef<RowDrag | null>(null);
+    const [dropMark, setDropMark] = useState<DropMark | null>(null);
+
+    const onRowPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+        const target = event.target as HTMLElement;
+        const row = target.closest<HTMLElement>('[data-model-id]');
+        // Only the name part starts a drag; the lock and the eye stay buttons.
+        if (event.button !== 0 || inProgress || !row || !target.closest('a')) {
+            return;
+        }
+        const model = models.find((item) => item.modelID === row.dataset.modelId);
+        if (model) {
+            rowDragRef.current = { model, pointerId: event.pointerId, startY: event.clientY, active: false };
+        }
+    };
+
+    const onRowPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+        const drag = rowDragRef.current;
+        if (!drag || drag.pointerId !== event.pointerId) {
+            return;
+        }
+        if (!drag.active) {
+            if (Math.abs(event.clientY - drag.startY) < DRAG_START_DISTANCE) {
+                return;
+            }
+            drag.active = true;
+            // From here on the rows do not get the click, so the selection stays.
+            event.currentTarget.setPointerCapture(event.pointerId);
+        }
+        const scrollElement = scrollRef.current;
+        const box = scrollElement.getBoundingClientRect();
+        if (event.clientY < box.top + DRAG_SCROLL_EDGE) {
+            scrollElement.scrollTop -= DRAG_SCROLL_STEP;
+        } else if (event.clientY > box.bottom - DRAG_SCROLL_EDGE) {
+            scrollElement.scrollTop += DRAG_SCROLL_STEP;
+        }
+        setDropMark(dropMarkAt(rowsRef.current, event.clientY));
+    };
+
+    const onRowPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+        const drag = rowDragRef.current;
+        if (!drag || drag.pointerId !== event.pointerId) {
+            return;
+        }
+        rowDragRef.current = null;
+        setDropMark(null);
+        if (!drag.active) {
+            return;
+        }
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+        if (event.type === 'pointerup') {
+            const { index } = dropMarkAt(rowsRef.current, event.clientY);
+            dispatch(editorActions.moveModelInList(headType, drag.model, index));
+        }
+    };
 
     const actions = {
         onClickModelHideBox(model) {
@@ -141,10 +235,21 @@ const ObjectListBox: React.FC<ObjectListBoxProps> = ({ headType }) => {
                 onDoubleClick={onResizeReset}
             />
             <div
+                ref={scrollRef}
                 className={styles['object-list-box']}
                 style={{ maxHeight: shownSize.height }}
             >
-                <div className={classNames('padding-vertical-4')}>
+                <div
+                    ref={rowsRef}
+                    className={classNames('padding-vertical-4', styles['object-list-rows'], { [styles.dragging]: !!dropMark })}
+                    onPointerDown={onRowPointerDown}
+                    onPointerMove={onRowPointerMove}
+                    onPointerUp={onRowPointerEnd}
+                    onPointerCancel={onRowPointerEnd}
+                >
+                    {dropMark && (
+                        <div className={styles['object-list-drop-line']} style={{ top: dropMark.top }} />
+                    )}
                     {
                         allModels && allModels.map((model) => {
                             return (

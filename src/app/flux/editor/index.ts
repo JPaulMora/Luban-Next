@@ -43,6 +43,7 @@ import {
 import CompoundOperation from '../../core/CompoundOperation';
 import OperationHistory from '../../core/OperationHistory';
 import log from '../../lib/log';
+import { moveToInsertPosition } from '../../lib/object-order';
 import ProgressStatesManager, { PROCESS_STAGE, STEP_STAGE } from '../../lib/manager/ProgressManager';
 import workerManager from '../../lib/manager/workerManager';
 import ModelGroup from '../../models/ModelGroup';
@@ -63,6 +64,7 @@ import DrawStart from '../operation-history/DrawStart';
 import DrawTransform from '../operation-history/DrawTransform';
 import DrawTransformComplete from '../operation-history/DrawTransformComplete';
 import MoveOperation2D from '../operation-history/MoveOperation2D';
+import ReorderOperation2D from '../operation-history/ReorderOperation2D';
 import RotateOperation2D from '../operation-history/RotateOperation2D';
 import ScaleOperation2D from '../operation-history/ScaleOperation2D';
 import VisibleOperation2D from '../operation-history/VisibleOperation2D';
@@ -1823,6 +1825,35 @@ export const actions = {
             dispatch(actions.clearSelection(headType));
         }
         dispatch(projectActions.autoSaveEnvironment(headType));
+        dispatch(baseActions.render(headType));
+    },
+
+    // Drag in the object list: move a model before the one now at insertBefore
+    // (models.length for the end). The list order is the laser order inside a
+    // tool path and the stack on the canvas, first at the bottom, so the G-code
+    // has to be generated again.
+    moveModelInList: (headType: HeadType, model, insertBefore: number) => (dispatch, getState) => {
+        const { modelGroup, SVGActions } = getState()[headType];
+        const models: SvgModel[] = modelGroup.models;
+        const order = moveToInsertPosition(models, models.indexOf(model), insertBefore);
+        if (order === models) {
+            return;
+        }
+        const operation = new ReorderOperation2D({
+            modelGroup,
+            svgActions: SVGActions,
+            from: models,
+            to: order
+        });
+        operation.redo();
+        const operations = new CompoundOperation();
+        operations.push(operation);
+        // Adding to the history also autosaves the project.
+        dispatch(operationHistoryActions.setOperations(headType, operations));
+        dispatch(actions.resetProcessState(headType));
+        dispatch(baseActions.updateState(headType, {
+            isChangedAfterGcodeGenerating: true
+        }));
         dispatch(baseActions.render(headType));
     },
 

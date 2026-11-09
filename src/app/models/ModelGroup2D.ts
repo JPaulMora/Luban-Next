@@ -318,6 +318,19 @@ class ModelGroup2D extends EventEmitter {
         selected.updateTransformation({ 'positionZ': INDEXMARGIN });
     }
 
+    /**
+     * Put the models in this order, first at the bottom of the stack. It is the
+     * object list order and the laser order inside a tool path. positionZ
+     * follows, because opening a project sorts the models by it.
+     */
+    public setModelOrder(models: TModel[]) {
+        this.models = [...models];
+        for (let i = 0; i < this.models.length; i++) {
+            this.models[i].updateTransformation({ 'positionZ': (i + 1) * INDEXMARGIN });
+        }
+        this.modelChanged();
+    }
+
     public resetModelsPositionZByOrder() {
         const sorted = this.getSortedModelsByPositionZ();
         for (let i = 0; i < sorted.length; i++) {

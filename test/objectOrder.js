@@ -7,7 +7,27 @@ require('ts-node').register({
         esModuleInterop: true
     }
 });
-const { nextStackedTarget } = require('../src/app/lib/object-order');
+const { moveToInsertPosition, nextStackedTarget } = require('../src/app/lib/object-order');
+
+test('moveToInsertPosition moves one item before the given position', (t) => {
+    const list = ['a', 'b', 'c', 'd'];
+    t.deepEqual(moveToInsertPosition(list, 0, 2), ['b', 'a', 'c', 'd'], 'first item down by one');
+    t.deepEqual(moveToInsertPosition(list, 3, 0), ['d', 'a', 'b', 'c'], 'last item to the top');
+    t.deepEqual(moveToInsertPosition(list, 1, 4), ['a', 'c', 'd', 'b'], 'item to the end');
+    t.deepEqual(moveToInsertPosition(list, 2, 1), ['a', 'c', 'b', 'd'], 'item up by one');
+    t.deepEqual(list, ['a', 'b', 'c', 'd'], 'input list unchanged');
+    t.end();
+});
+
+test('moveToInsertPosition keeps the list when nothing moves', (t) => {
+    const list = ['a', 'b', 'c'];
+    t.equal(moveToInsertPosition(list, 1, 1), list, 'drop on its own place');
+    t.equal(moveToInsertPosition(list, 1, 2), list, 'drop right below itself');
+    t.equal(moveToInsertPosition(list, -1, 0), list, 'index below range');
+    t.equal(moveToInsertPosition(list, 3, 0), list, 'index above range');
+    t.deepEqual(moveToInsertPosition(list, 0, 99), ['b', 'c', 'a'], 'position past the end clamps to the end');
+    t.end();
+});
 
 test('nextStackedTarget walks down the stack under the pointer', (t) => {
     const stack = ['top', 'middle', 'bottom'];

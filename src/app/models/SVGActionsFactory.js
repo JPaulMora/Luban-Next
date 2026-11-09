@@ -324,6 +324,15 @@ class SVGActionsFactory {
         }
     }
 
+    // Stack the elements in this order, first at the bottom.
+    orderElements(elements) {
+        for (const elem of elements) {
+            if (elem && elem.parentNode === this.svgContentGroup.group) {
+                this.svgContentGroup.group.appendChild(elem);
+            }
+        }
+    }
+
     // when single select
     updateTransformation(transformation, elem) {
         elem = elem || this.svgContentGroup.getSelected();

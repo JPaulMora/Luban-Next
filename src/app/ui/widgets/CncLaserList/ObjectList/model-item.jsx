@@ -61,7 +61,7 @@ function ModelItem(
     const hasChildren = model.children && !!model.children?.length;
 
     return (
-        <div>
+        <div data-model-id={model.modelID}>
             <TipTrigger
                 key={model.modelID}
                 title={i18n._('key-PrintingCncLaser/ObjectList-Object')}
