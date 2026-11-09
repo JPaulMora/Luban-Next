@@ -275,6 +275,11 @@ export const actions = {
         dispatch(operationHistoryActions.clear(envHeadType));
         if (envHeadType === HEAD_CNC || envHeadType === HEAD_LASER) {
             modActions = editorActions;
+            // Drop the G-code of the project that was open before, so Export
+            // cannot offer it. Processing a model used to reset this as a side
+            // effect, but a project that holds its processed images skips that.
+            dispatch(editorActions.clearGcodeFile(envHeadType));
+            dispatch(editorActions.resetProcessState(envHeadType));
         }
         if (envHeadType === HEAD_PRINTING) {
             modActions = printingActions;
