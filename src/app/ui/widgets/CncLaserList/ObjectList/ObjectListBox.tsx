@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 
 import { actions as editorActions } from '../../../../flux/editor';
@@ -44,6 +44,8 @@ const growUpAndRight: ResizeFunction<ListSize> = (size, dx, dy) => ({ width: siz
 const ObjectListBox: React.FC<ObjectListBoxProps> = ({ headType }) => {
     const selectedModelArray = useSelector(state => state[headType].modelGroup?.selectedModelArray);
     const models = useSelector(state => state[headType]?.modelGroup?.models);
+    // The row last clicked without Shift: one end of a Shift+click range.
+    const rangeAnchorRef = useRef(null);
 
     const inProgress = useSelector(state => state[headType]?.inProgress, shallowEqual);
     const previewFailed = useSelector(state => state[headType]?.previewFailed, shallowEqual);
@@ -55,7 +57,10 @@ const ObjectListBox: React.FC<ObjectListBoxProps> = ({ headType }) => {
     } = useListResize<ListSize>(SIZE_STORE_KEY, DEFAULT_SIZE, clampSize);
 
     const onSelectItem = useCallback((model, event) => {
-        let isMultiSelect = event.shiftKey;
+        // Ctrl+click (Cmd+click on macOS) adds or removes one model. Shift+click
+        // selects every visible model from the anchor row to this one. Without an
+        // anchor in the list, a single selected model is the anchor.
+        let isMultiSelect = event.ctrlKey || event.metaKey;
 
         // TODO: Add comment here
         if (selectedModelArray.length === 1 && selectedModelArray[0].visible === false) {
@@ -66,8 +71,24 @@ const ObjectListBox: React.FC<ObjectListBoxProps> = ({ headType }) => {
             isMultiSelect = false;
         }
 
+        const listModels = models.filter(item => !item.supportTag);
+        let anchor = rangeAnchorRef.current;
+        if (!listModels.includes(anchor)) {
+            anchor = selectedModelArray.length === 1 ? selectedModelArray[0] : null;
+        }
+        if (event.shiftKey && anchor && model.visible !== false) {
+            const from = listModels.indexOf(anchor);
+            const to = listModels.indexOf(model);
+            const range = listModels
+                .slice(Math.min(from, to), Math.max(from, to) + 1)
+                .filter(item => item.visible !== false);
+            dispatch(editorActions.selectModels(headType, range));
+            return;
+        }
+
+        rangeAnchorRef.current = model;
         dispatch(editorActions.selectTargetModel(headType, model, isMultiSelect));
-    }, [dispatch, headType, selectedModelArray]);
+    }, [dispatch, headType, models, selectedModelArray]);
 
     const actions = {
         onClickModelHideBox(model) {

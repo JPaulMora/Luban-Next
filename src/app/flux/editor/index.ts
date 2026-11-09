@@ -1245,6 +1245,16 @@ export const actions = {
         // SVGActions.resetSelection();
     },
 
+    // Select exactly these models, as Shift+click in the object list does.
+    selectModels: (headType: HeadType, models) => (dispatch, getState) => {
+        const SVGActions: SVGActionsFactory = getState()[headType].SVGActions;
+        const workpiece: Workpiece = getState()[headType].workpiece;
+
+        dispatch(actions.clearSelection(headType));
+        SVGActions.addSelectedSvgModelsByModels(models, workpiece.shape === WorkpieceShape.Cylinder);
+        dispatch(baseActions.render(headType));
+    },
+
     changeSelectedModelMode: (headType, sourceType, mode) => async (dispatch, getState) => {
         const { modelGroup, materials, toolPathGroup } = getState()[headType];
 
