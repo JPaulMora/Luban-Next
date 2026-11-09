@@ -19,6 +19,20 @@
     }
 }
 
+// Lies over the bottom edge of the Toolpath List without taking up space.
+// The list height is set inline by ToolPathListBox (resizable, default 176).
+.tool-path-list-resize-bottom {
+    position: relative;
+    z-index: 1;
+    height: 6px;
+    margin-top: -6px;
+    cursor: ns-resize;
+
+    &:hover {
+        background-color: $blue-5;
+    }
+}
+
 .object-list-resize-corner {
     position: absolute;
     top: 0;
@@ -34,7 +48,7 @@
     }
 }
 
-// The Toolpath List uses this max-height. The Object List overrides it inline.
+// Both lists set their max-height inline; 176 px is the default height.
 .object-list-box {
     max-height: 176px;
     overflow-y: auto;

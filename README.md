@@ -38,9 +38,9 @@ Set the gap between the boxes. Each box and label keeps its own toolpath, so the
 
 Choose which axis is up, tilt that direction toward another axis, skip a base, and cut a run of layers before skipping the next run. A base that is not welded to the walls still becomes a full-length side.
 
-### Object list size
+### Object and tool path list size
 
-Drag the top edge or the top-right corner of the laser and CNC Object List to make it taller or wider. Luban Next remembers the size; double-click a handle to reset it. Hover a row to see the full object name.
+Drag the top edge or the top-right corner of the laser and CNC Object List to make it taller or wider. Drag the bottom edge of the Toolpath List to make it taller. Luban Next remembers both sizes; double-click a handle to reset it. Hover a row to see the full object name.
 
 ### CNC stock thickness
 
