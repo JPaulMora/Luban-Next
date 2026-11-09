@@ -6,6 +6,7 @@ import SVGParser from '../../../../shared/lib/SVGParser';
 import { SOURCE_TYPE_RASTER, TOOLPATH_TYPE_VECTOR } from '../../../constants';
 import slice from '../../../slicer/call-engine';
 import logger from '../../../lib/logger';
+import { vbitPocketDiameter } from '../../../lib/cnc/vbitPocketDiameter';
 import sendMessage from '../utils/sendMessage';
 
 const log = logger('worker:generateToolPath');
@@ -74,6 +75,15 @@ const generateLaserToolPathFromEngine = async (allTasks, onProgress) => {
             } else {
                 gcodeConfig.fillDensity = 1 / gcodeConfig.stepOver;
                 gcodeConfig.tabHeight -= gcodeConfig.targetDepth;
+                if (gcodeConfig.pathType === 'pocket' || gcodeConfig.pathType === 'fill') {
+                    const cuttingDiameter = vbitPocketDiameter(modelInfo.toolParams, gcodeConfig.targetDepth);
+                    if (cuttingDiameter != null && modelInfo.toolParams) {
+                        modelInfo.toolParams = {
+                            ...modelInfo.toolParams,
+                            toolDiameter: cuttingDiameter,
+                        };
+                    }
+                }
             }
             modelInfo.toolpathFileName = generateRandomPathName('json');
             modelInfo.identifier = task.identifier;
