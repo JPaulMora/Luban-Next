@@ -194,6 +194,12 @@ const createApplication = () => {
     });
 
     app.use('/data', express.static(DataStorage.userDataDir));
+    // Answer a missing data file here. The catch-all below never answers, and
+    // the renderer gets six connections per host, so six missing images would
+    // stall every later request.
+    app.use('/data', (req, res) => {
+        res.sendStatus(404);
+    });
 
     // Setup i18n (i18next)
     i18next
