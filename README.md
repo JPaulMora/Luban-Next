@@ -1,7 +1,7 @@
 Luban Next
 ==========
 
-[Luban Next](https://github.com/JPaulMora/Luban-Next) is a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban). The current version is 4.17.9. Version notes live on the [GitHub releases](https://github.com/JPaulMora/Luban-Next/releases).
+[Luban Next](https://github.com/JPaulMora/Luban-Next) is a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban). The current version is 4.17.10. Version notes live on the [GitHub releases](https://github.com/JPaulMora/Luban-Next/releases).
 
 ## New features vs Snapmaker Luban
 
