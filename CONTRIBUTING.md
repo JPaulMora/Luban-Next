@@ -1,6 +1,6 @@
-# Contributing to Snapmaker Luban
+# Contributing to Luban Next
 
-We would love for your to contribute to Snapmaker Luban and help make it better.
+We would love for your to contribute to Luban Next and help make it better.
 Here are the guidelines we would like you to follow:
 
 - [Issues and Bugs](#issue)
@@ -11,7 +11,7 @@ Here are the guidelines we would like you to follow:
 
 ## <a name="issue"></a> Found a Bug?
 
-If you found a bug in the source code, you can help us by [submitting a issue](https://github.com/Snapmaker/Luban/issues/new) to our [Github repository](https://github.com/Snapmaker/Luban).
+If you found a bug in the source code, you can help us by [submitting a issue](https://github.com/JPaulMora/Luban-Next/issues/new) to our [Github repository](https://github.com/JPaulMora/Luban-Next).
 Even better, you can [submitting a pull request](#pr) with a fix.
 
 Before you submit an issue, please search the issue tracker, maybe an issue for your problem already exists and discussion might inform you of workarounds readily available.
@@ -22,11 +22,11 @@ Unfortunately, we are not able to investigate / fix bugs without a minimal repro
 
 ## <a name="feature"></a> Adding a feature?
 
-You can *request a new feature* by [submitting an issue](https://github.com/Snapmaker/Luban/issues/new) to our [Github repository](https://github.com/Snapmaker/Luban) as well.
+You can *request a new feature* by [submitting an issue](https://github.com/JPaulMora/Luban-Next/issues/new) to our [Github repository](https://github.com/JPaulMora/Luban-Next) as well.
 If you would like to *implement a new feature*, please submit an issue with a proposal for your work first, to be sure that we can use it.
 Small Features can be crafted and directly submitted as a Pull Request.
 
-Our [Development](docs/Development.md) documentation describes how to setup your development environment (macOS/Ubuntu/Windows) and run Snapmaker Luban from source code.
+Our [Development](docs/Development.md) documentation describes how to setup your development environment (macOS/Ubuntu/Windows) and run Luban Next from source code.
 
 ### <a name="pr"></a> Pull Request
 
@@ -35,7 +35,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
 1. Search existing PRs for an open or closed PR relates to your submission to make sure it's not duplicated.
 2. Be sure that an issue describes the problem you've fixing / solving, or documents the design for the feature you'd like to add.
 Discussing the design up front helps to ensure that we're ready to accept your work.
-3. Fork the `Snapmaker/Luban` repo.
+3. Fork the `JPaulMora/Luban-Next` repo.
 4. Make your changes in a new git branch
     ```
     git checkout -b my-fix-branch main
@@ -57,7 +57,7 @@ We also have a git hook script to check your commit message, for convenience you
     git push origin my-fix-branch
     ```
 
-9. In Github, send a pull request to `Snapmaker/Luban`.
+9. In Github, send a pull request to `JPaulMora/Luban-Next`.
 
    If we suggest,
 

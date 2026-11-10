@@ -3,7 +3,7 @@ Luban Next
 
 [Luban Next](https://github.com/JPaulMora/Luban-Next) is a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban). The current version is 4.17.8. Version notes live on the [GitHub releases](https://github.com/JPaulMora/Luban-Next/releases).
 
-## New features vs Luban
+## New features vs Snapmaker Luban
 
 ### Laser SVG colors
 
@@ -42,13 +42,10 @@ React 18, Webpack 5, and native-module rebuilds that run on Python 3.12+.
 
 ---
 
-Snapmaker Luban
-===============
-
 [![Build Status](https://github.com/Snapmaker/Luban/workflows/Build%20on%20Release%20created/badge.svg)](https://github.com/Snapmaker/Luban/actions)
 
-Snapmaker Luban is an easy-to-use 3-in-1 software tailor-made for Snapmaker machines.
-You can customize the printer settings and control the machine in Luban anytime with ease.
+Luban Next is an easy-to-use 3-in-1 software tailor-made for Snapmaker machines.
+You can customize the printer settings and control the machine in Luban Next anytime with ease.
 The software also provides G-code generation support for 3D models, laser engraving / cutting, and CNC milling.
 
 Our goal is to provide a multi-functional 3D software, while making it as accessible and customizable as possible for new users / beginners.
@@ -66,7 +63,7 @@ We use [LunarSlicer](https://github.com/Snapmaker/LunarSlicer) for 3D slicing.
 You can download latest releases of software under the ["**Releases**"](https://github.com/JPaulMora/Luban-Next/releases) section.
 It's recommended to use a stable release version unless you want to do some modifications on the source code.
 
-For Linux distros (Debian for example), you may need to run following commands to install dependencies for Luban:
+For Linux distros (Debian for example), you may need to run following commands to install dependencies for Luban Next:
 
 ```Bashhist
 > sudo dpkg --install snapmaker-luban-{version}-linux-amd64.deb
@@ -80,7 +77,7 @@ Checkout [Development](./docs/Development.md) to how to run and develop from sou
 ## Feedback & Contribution
 
 - To submit a bug or feature request, [file an issue](https://github.com/JPaulMora/Luban-Next/issues/new) in github issues.
-- To contribute some code, make sure you have read and followed our guidelines for [contributing](https://github.com/Snapmaker/Luban/blob/master/CONTRIBUTING.md).
+- To contribute some code, make sure you have read and followed our guidelines for [contributing](./CONTRIBUTING.md).
 
 ## Translations
 
@@ -95,6 +92,6 @@ We use crowdin for collaborative translations. We would greatly appreciate your 
 
 
 ## License
-Snapmaker Luban is released under terms of the AGPLv3 License.
+Luban Next is released under terms of the AGPLv3 License.
 
 Terms of the license can be found in the LICENSE file or at http://www.gnu.org/licenses/agpl-3.0.html.

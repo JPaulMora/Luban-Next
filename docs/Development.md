@@ -1,6 +1,6 @@
 # Development
 
-If you want to contribute to Luban, you will need to have `Node.js` development environment.
+If you want to contribute to Luban Next, you will need to have `Node.js` development environment.
 
 Or you can follow the instructions below to set up the development environment for specific platform:
 
