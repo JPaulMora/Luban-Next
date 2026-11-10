@@ -27,7 +27,11 @@ const TOOL_COMPARE_KEYS: Array<keyof CncToolParams> = [
 ];
 
 const DEFAULT_JOG_SPEED = 1500;
-const TOUCH_FEED_MM_MIN = 100;
+// After Resume the head is often at stop height (~80 mm). Feed the whole
+// descent at F100 would take tens of seconds. Rapid to a short clearance,
+// then feed only the last millimetres to the new zero.
+const APPROACH_CLEARANCE_MM = 5;
+const TOUCH_FEED_MM_MIN = 300;
 
 function normalizeCompareValue(value: unknown): string {
     if (value === undefined || value === null || value === '') {
@@ -114,12 +118,14 @@ export function buildCncToolChangeLines(
     const fromName = toolLabel(previous?.toolParams);
     const toName = toolLabel(next?.toolParams);
     const offsetText = formatOffset(offset);
+    const approachText = formatOffset(offset + APPROACH_CLEARANCE_MM);
 
     return [
         `; Tool change: ${fromName} -> ${toName}`,
         `; Z offset ${offsetText} mm. Positive means the new tool is longer.`,
         'M600',
         `G0 X0 Y0 F${feed}`,
+        `G0 Z${approachText} F${feed}`,
         `G1 Z${offsetText} F${TOUCH_FEED_MM_MIN}`,
         'M600',
         'G92 Z0',

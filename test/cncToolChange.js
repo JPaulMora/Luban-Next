@@ -57,12 +57,13 @@ test('missing offset is zero and still pauses', (t) => {
         '; Z offset 0 mm. Positive means the new tool is longer.',
         'M600',
         'G0 X0 Y0 F1500',
-        'G1 Z0 F100',
+        'G0 Z5 F1500',
+        'G1 Z0 F300',
         'M600',
         'G92 Z0',
     ]);
     t.equal(lines.some((line) => line.indexOf('M5') === 0), false);
-    t.equal(lines.some((line) => /^G0 Z/.test(line)), false);
+    t.equal(lines.indexOf('M600') < lines.findIndex((line) => /^G0 Z/.test(line)), true);
     t.end();
 });
 
@@ -76,7 +77,8 @@ test('offset 2, 0, and -1 emit the pause block', (t) => {
         '; Z offset 2 mm. Positive means the new tool is longer.',
         'M600',
         'G0 X0 Y0 F1500',
-        'G1 Z2 F100',
+        'G0 Z7 F1500',
+        'G1 Z2 F300',
         'M600',
         'G92 Z0',
     ]);
@@ -88,7 +90,8 @@ test('offset 2, 0, and -1 emit the pause block', (t) => {
         '; Z offset 0 mm. Positive means the new tool is longer.',
         'M600',
         'G0 X0 Y0 F1500',
-        'G1 Z0 F100',
+        'G0 Z5 F1500',
+        'G1 Z0 F300',
         'M600',
         'G92 Z0',
     ]);
@@ -100,7 +103,8 @@ test('offset 2, 0, and -1 emit the pause block', (t) => {
         '; Z offset -1 mm. Positive means the new tool is longer.',
         'M600',
         'G0 X0 Y0 F1500',
-        'G1 Z-1 F100',
+        'G0 Z4 F1500',
+        'G1 Z-1 F300',
         'M600',
         'G92 Z0',
     ]);
