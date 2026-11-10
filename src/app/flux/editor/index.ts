@@ -8,6 +8,7 @@ import { v4 as uuid } from 'uuid';
 import { normalizeStackSettings } from '../../../shared/lib/stackedModel';
 import { isEqual, round, whetherTransformed } from '../../../shared/lib/utils';
 import api from '../../api';
+import { attachChiselMesh, cncChiselOptions } from '../../lib/chisel-mesh';
 import { controller } from '../../communication/socket-communication';
 import {
     COORDINATE_MODE_BOTTOM_CENTER,
@@ -959,7 +960,8 @@ export const actions = {
         headType,
         {
             originalName, uploadName, sourceWidth, sourceHeight, mode, sourceType,
-            config, gcodeConfig, transformation, modelID, zIndex, isLimit, loadFrom, processImageName
+            config, gcodeConfig, transformation, modelID, zIndex, isLimit, loadFrom, processImageName,
+            chiselPositions
         }
     ) => async (dispatch, getState) => {
         const { size, promptDamageModel } = getState().machine;
@@ -1090,6 +1092,7 @@ export const actions = {
         };
 
         const model = modelGroup.addModel(options);
+        attachChiselMesh(model, chiselPositions);
         model.setPreSelection(contentGroup.preSelectionGroup);
         model.needRepair = isDamage;
         const promptTasks = [];
@@ -1131,10 +1134,11 @@ export const actions = {
 
     insertDefaultTextVector: headType => dispatch => {
         api.convertTextToSvg({
-            ...DEFAULT_TEXT_CONFIG
+            ...DEFAULT_TEXT_CONFIG,
+            ...cncChiselOptions(headType, DEFAULT_TEXT_CONFIG, { targetDepth: 2 })
         }).then(async res => {
             // const { name, filename, width, height } = res.body;
-            const { originalName, uploadName, sourceWidth, sourceHeight } = res.body;
+            const { originalName, uploadName, sourceWidth, sourceHeight, chisel } = res.body;
             const sourceType = 'text';
             const mode = 'vector';
 
@@ -1145,7 +1149,8 @@ export const actions = {
                     sourceWidth,
                     sourceHeight,
                     mode,
-                    sourceType
+                    sourceType,
+                    chiselPositions: chisel
                 })
             );
         });
@@ -2551,10 +2556,16 @@ export const actions = {
      */
     modifyText: (headType, element, options) => (dispatch, getState) => {
         const { SVGActions } = getState()[headType];
-
-        SVGActions.modifyText(element, options);
-        dispatch(projectActions.autoSaveEnvironment(headType));
-        dispatch(actions.resetProcessState(headType));
+        const pending = SVGActions.modifyText(element, options);
+        const finish = () => {
+            dispatch(projectActions.autoSaveEnvironment(headType));
+            dispatch(actions.resetProcessState(headType));
+        };
+        if (pending && pending.then) {
+            pending.then(finish);
+        } else {
+            finish();
+        }
     },
 
     /**

@@ -49,6 +49,12 @@ const TextParameters = ({ headType, modifyText, disabled }) => {
         },
         onChangeAlignment: (newAlignment) => {
             modifyText(null, { alignment: newAlignment });
+        },
+        onChangeSteepAngle: (steepAngle) => {
+            modifyText(null, { steepAngle });
+        },
+        onChangeShallowAngle: (shallowAngle) => {
+            modifyText(null, { shallowAngle });
         }
     };
 
@@ -167,6 +173,37 @@ const TextParameters = ({ headType, modifyText, disabled }) => {
                             </span>
                         </div>
                     </TipTrigger>
+                    {headType === 'cnc' && (
+                        <React.Fragment>
+                            <div className="margin-vertical-8">
+                                {i18n._('key-CncLaser/TextSection-The groove is steep on the left and top, shallow on the right and bottom, and stops at the target depth.')}
+                            </div>
+                            <div className="sm-flex height-32 margin-vertical-8">
+                                <span className="sm-flex-auto sm-flex-order-negative width-120">{i18n._('key-CncLaser/TextSection-Left and top')}</span>
+                                <Input
+                                    suffix="°"
+                                    disabled={disabled}
+                                    min={8}
+                                    max={82}
+                                    className="sm-flex-width align-r"
+                                    value={Number(config.steepAngle) || 70}
+                                    onChange={actions.onChangeSteepAngle}
+                                />
+                            </div>
+                            <div className="sm-flex height-32 margin-vertical-8">
+                                <span className="sm-flex-auto sm-flex-order-negative width-120">{i18n._('key-CncLaser/TextSection-Right and bottom')}</span>
+                                <Input
+                                    suffix="°"
+                                    disabled={disabled}
+                                    min={8}
+                                    max={82}
+                                    className="sm-flex-width align-r"
+                                    value={Number(config.shallowAngle) || 28}
+                                    onChange={actions.onChangeShallowAngle}
+                                />
+                            </div>
+                        </React.Fragment>
+                    )}
 
 
                 </React.Fragment>
