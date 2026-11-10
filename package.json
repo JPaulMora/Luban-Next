@@ -205,7 +205,7 @@
     "react-virtualized-auto-sizer": "1.0.20",
     "react-window": "1.8.9",
     "react-window-infinite-loader": "1.0.9",
-    "redux": "4.0.5",
+    "redux": "4.2.1",
     "redux-thunk": "2.3.0",
     "regenerator-runtime": "0.13.9",
     "regression": "2.0.1",
