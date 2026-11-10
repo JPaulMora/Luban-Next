@@ -39,6 +39,10 @@ Or you can follow the instructions below to set up the development environment f
 > npm run build && npm run build:win-x64 (for Windows)
 ```
 
+### Dependency upgrades
+
+Open items are tracked in [upgrades.md](upgrades.md).
+
 ### Additional Notes
 
 - For developers in China, you can use taobao mirror to install npm packages.
