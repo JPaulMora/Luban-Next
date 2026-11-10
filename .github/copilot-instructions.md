@@ -1,6 +1,6 @@
 # Luban-Next
 
-Full instructions, repo map, current state, and backlog: [AGENTS.md](../AGENTS.md). Change policy there.
+Full instructions, repo map, and backlog: [AGENTS.md](../AGENTS.md). Change policy there. Do not add version or feature history to it.
 
 This is a fork of Snapmaker Luban (Electron + React + a Node server) for 3D print, laser, and CNC. `README.md` names the app Luban Next.
 

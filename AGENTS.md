@@ -1,10 +1,10 @@
 # AGENTS.md
 
-Instructions for coding agents working in Luban-Next. This file is the source of truth. `CLAUDE.md` and `.github/copilot-instructions.md` point here. When a change moves the snapshot below, update **Current state** and **Goals and pending updates** in the same series of commits.
+Instructions for coding agents working in Luban-Next. This file is the source of truth. `CLAUDE.md` and `.github/copilot-instructions.md` point here. It stays version-agnostic: do not record releases, dates, or feature history here. `README.md` and the git history hold those. Edit this file only when a standing rule, the repo map, a command, or the backlog changes.
 
 ## What this is
 
-Luban-Next is a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban) (AGPL-3.0-or-later): an Electron app for Snapmaker 3-in-1 machines. It prepares toolpaths and G-code for 3D printing, laser, and CNC, and it talks to the machine.
+Luban-Next is a fork of [Snapmaker Luban](https://github.com/Snapmaker/Luban) (AGPL-3.0-or-later): an Electron app for Snapmaker 3-in-1 machines. It prepares toolpaths and G-code for 3D printing, laser, and CNC, and it talks to the machine. Fork remote: `git@github.com:JPaulMora/Luban-Next.git`.
 
 `README.md`, `CONTRIBUTING.md`, and `docs/Development.md` name the app Luban Next. Use those for install steps and the commit message format. Use this file for how to change the fork.
 
@@ -52,7 +52,11 @@ npm test             # tape test/*.js only
 npm run build && npm run build:mac-arm64
 ```
 
-Renderer port `8080`, server port `8000` (`package.json` `config`). `engines.node` is `>=16`. Electron 15 carries its own Node.
+Renderer port `8080`, server port `8000` (`package.json` `config`). `engines.node` is `>=16`. Electron carries its own Node. Dependency versions live in `package.json`.
+
+`@snapmaker/luban-platform` is TypeScript. The server webpack configs compile it into the server bundle. Node `require()` uses the CommonJS emit in `packages/luban-platform/dist`, produced by `npm run build:platform` (also the first step of `build:server`).
+
+Husky hooks (`commit-msg` commitlint, `pre-push` eslint) activate at `npm install`. Native rebuild (`npm run electron-rebuild`) uses `build/electron-rebuild.sh` and a local Python venv so node-gyp can run on Python 3.12+. Packaging (`build/electron-builder.sh`) installs the packaged app with `--ignore-scripts` and then rebuilds `font-scanner` and `serialport` the same way. `electron-builder.yml` sets `npmRebuild: false` so electron-builder does not rebuild natives again with the system Python. Release packaging runs on GitHub Actions when a release is published, or from `workflow_dispatch`. A draft does not start a build until it is published. Runners: Intel Mac on `macos-15-intel`, Windows on `windows-2022`, Linux on `ubuntu-22.04`. Submodules are fetched over HTTPS. Notarization runs only when Apple credentials are set. The Apple Silicon package is built locally.
 
 ## Where code lives
 
@@ -75,17 +79,7 @@ Renderer port `8080`, server port `8000` (`package.json` `config`). `engines.nod
 
 New code follows the language of the module it edits. When you rewrite a `.js` module, convert it to TypeScript in that change. Lint is Airbnb via `eslint-config-snapmaker` (`.eslintrc.js`). Styles are Stylus.
 
-## Current state
-
-As of 2026-11-10:
-
-- Fork remote is `git@github.com:JPaulMora/Luban-Next.git`, branch `main`, version `4.17.9`. History matches upstream through `db573f5df` (`Feature: Update Chinese i18n`). First fork-only commits are the agent instruction files and the Python 3.12+ native rebuild wrapper. No open issues on the fork. Laser material tests can set the gap between boxes, and each shape keeps its own toolpath. Engrave and cut presets set the speed and power range for the installed laser. A project saved with every box linked to the first label is repaired when it opens. Laser stacked models can set the up axis, tilt that direction toward another axis, a base offset, and a cut/skip pattern. A base that is not welded to the walls still slices to a full-length side. The preview can save that layered model as an STL. CNC Job Setup can set rectangular workpiece Thickness (Z), and the carve simulation wood block uses that depth. On Wi-Fi, laser and enclosure state survive a bad poll, homing restores work coordinates, a failed focus move does not start the job, and Go To Work Origin moves Z separately from X and Y. CNC Process Preview auto-shows an opaque gray-blue heightfield mesh preview. Each CNC toolpath line can use its own color. A relief carved with the Carving V-bit uses the 0.2 mm tip instead of the shank. CNC text stays an outline. A text object can be written out as a chisel STL of the text box with the groove cut out. The floor sits 0.2 mm under the deepest groove, and each stroke is a 45° cut that meets at its center. That geometry is in `src/server/lib/chisel.js`. Simulate runs a 0.1 mm dexel carve that stamps flat/ball/V bit profiles along the toolpath (no quality preset). When a solid result exists the heightfield is disabled and a Simulation checkbox toggles only that solid mesh. Consecutive CNC toolpaths that use different bits insert an M600 tool-change pause, a return to work origin X/Y, a slow move to the next tool Z offset (positive means a longer tool), a second M600 for placement check, and G92 Z0 before the next path continues.
-- Stack: Electron 15.5.7, React 18.3.1, Redux 4, Ant Design 4.24, Three 0.124, TypeScript 4.4.4, Webpack 5.112, Gulp 4, Socket.IO 4.5, Stylus. Renderer workers (`Pool.worker`, `clipperPool.worker`, `ClippingPoolManager.worker`) are webpack entries. Images and fonts use webpack asset modules. The renderer still runs with `nodeIntegration` and remote enabled.
-- About 313 `.js`, 224 `.jsx`, 252 `.ts`, 148 `.tsx`, and 118 `.styl` files under `src` and `packages`. Machine channels and several Redux slices are large and carry hardcoded per-machine branches.
-- Tape covers Marlin replies, the serial sender, SVG paint resolution (`test/svgParser.js`), stacked-model slicing (`test/stackedModel.js`), reachable bed size, laser power state, work-origin axes, go-to-origin order, and a few utilities. `gcodeParser.js` has no direct tests. A laser vector SVG can keep a color palette. Import asks whether to process each color or keep one object. Process-each-color writes one SVG object per swatch from the original file so the normal multi-object toolpath path can run.
-- Submodules are uninitialized until `git submodule update --init`. `README.md` titles the fork Luban Next and lists new features vs Snapmaker Luban. The voxel G-code preview leads that list, with a GIF in `docs/media`. Version notes are on the GitHub release tags. `docs/Development.md` covers the macOS dev path. 4.16.0 home-screen startup is about 4 s, versus about 24 s for installed 4.15.0. Husky hooks (`commit-msg` commitlint, `pre-push` eslint) activate at `npm install`. Native rebuild (`npm run electron-rebuild`) uses `build/electron-rebuild.sh` and a local Python venv so node-gyp 9 can run on Python 3.12+. Packaging (`build/electron-builder.sh`) installs the packaged app with `--ignore-scripts` and then rebuilds `font-scanner` and `serialport` the same way. `electron-builder.yml` sets `npmRebuild: false` so electron-builder does not rebuild natives again with the system Python. Release packaging runs on GitHub Actions when a release is published, or from `workflow_dispatch`. A draft does not start a build until it is published. Runners: Intel Mac on `macos-15-intel`, Windows on `windows-2022`, Linux on `ubuntu-22.04`. Submodules are fetched over HTTPS. Notarization runs only when Apple credentials are set. The tested Apple Silicon package is built locally.
-- `@snapmaker/luban-platform` is TypeScript. The server webpack configs compile it into the server bundle. Node `require()` uses the CommonJS emit in `packages/luban-platform/dist`, produced by `npm run build:platform` (also the first step of `build:server`).
-- Agent instructions are this file, `CLAUDE.md`, and `.github/copilot-instructions.md`.
+Machine channels and several Redux slices are large and carry hardcoded per-machine branches. The renderer runs with `nodeIntegration` and remote enabled. Renderer workers (`Pool.worker`, `clipperPool.worker`, `ClippingPoolManager.worker`) are webpack entries. Images and fonts use webpack asset modules.
 
 ## Goals and pending updates
 
@@ -94,9 +88,9 @@ Standing rules above are permanent. This list is the backlog. Add an item when y
 1. Cover `src/shared/lib/gcodeParser.js` and `parseGcodeHeader.js` with tape tests before changing parse results.
 2. Collapse hardcoded branches in `ConnectionManager`, `SacpChannel`, and the machine instances. Bytes on the wire stay the same.
 3. Replace mixed JS/TS one module at a time. The replacement lands with the caller updates; the old file goes away in that commit.
-4. Plan remaining framework upgrades as their own slices: Electron 15 and the renderer’s Node integration. Each upgrade is a sequence of small commits with a stated behavior check.
+4. Work the dependency upgrade list in `docs/upgrades.md`, one commit per item. Electron 15 and the renderer’s Node integration stay the last project on that list.
 5. Extend tests for any standard boundary you touch (Marlin, G-code emit, SVG/DXF/STL). `npm test` only loads `test/*.js`.
 
 ## Keeping this file true
 
-Edit **Current state** when the version, layout, toolchain, or test picture changes. Edit **Goals and pending updates** when an item finishes or a new one is real. Keep both short enough to load every session.
+Do not update this file to describe a release or a feature. Add a backlog item when the work should survive the session, and remove it in the commit that finishes it.

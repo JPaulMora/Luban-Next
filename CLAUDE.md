@@ -1,6 +1,6 @@
 # Claude Code
 
-Read and follow [AGENTS.md](./AGENTS.md). That file holds the repo map, current state, and backlog. Policy changes go there.
+Read and follow [AGENTS.md](./AGENTS.md). That file holds the repo map and backlog. Policy changes go there. Do not add version or feature history to it.
 
 @AGENTS.md
 
