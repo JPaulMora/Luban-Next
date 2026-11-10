@@ -161,7 +161,7 @@
     "loglevel": "1.8.1",
     "method-override": "3.0.0",
     "minimatch": "3.0.4",
-    "moment": "2.24.0",
+    "moment": "2.31.0",
     "morgan": "1.9.1",
     "mousetrap": "1.6.5",
     "multicast-dns": "7.2.5",
