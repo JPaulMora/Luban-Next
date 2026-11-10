@@ -1,6 +1,15 @@
 # Set the default behavior
 * text=auto
 
+# Media stays binary. text=auto would rewrite bytes inside GIF and MP4.
+*.gif binary
+*.mp4 binary
+*.mov binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+
 # Always convert line endings to LF on checkout
 *.css   text eol=lf
 *.js    text eol=lf

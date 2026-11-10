@@ -5,6 +5,12 @@ Luban Next
 
 ## New features vs Snapmaker Luban
 
+### Voxel G-code preview
+
+CNC Process Preview can simulate the cut. A 0.1 mm voxel grid stamps the flat, ball, or V-bit along the toolpath, so the preview shows the carved stock. Turn on Simulation to see that solid. The colored lines stay available as the toolpath view.
+
+![Voxel G-code preview of a CNC carve](docs/media/cnc-voxel-gcode-preview.gif)
+
 ### Laser SVG colors
 
 Import a multi-color SVG and choose **Process each color** or **Import as one object**. Process each color splits the original file into one object and toolpath per fill or stroke.
