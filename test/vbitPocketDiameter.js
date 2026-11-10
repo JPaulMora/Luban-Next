@@ -8,7 +8,7 @@ require('ts-node').register({
     },
 });
 
-const { vbitPocketDiameter } = require('../src/server/lib/cnc/vbitPocketDiameter');
+const { vbitPocketDiameter, vbitReliefTipDiameter } = require('../src/server/lib/cnc/vbitPocketDiameter');
 
 test('vbit pocket uses the cone width at the cut depth', (t) => {
     const carving = {
@@ -22,6 +22,29 @@ test('vbit pocket uses the cone width at the cut depth', (t) => {
     t.ok(Math.abs(at2mm - expected) < 1e-9, `width=${at2mm}`);
     t.ok(at2mm < 3.175);
     t.equal(vbitPocketDiameter(carving, 10), null);
+    t.end();
+});
+
+test('vbit relief uses the tip when the stored diameter is the shank', (t) => {
+    const carving = {
+        toolType: 'vbit',
+        toolDiameter: 3.175,
+        toolAngle: 30,
+        toolShaftDiameter: 3.175,
+        definitionName: 'Carving V-bit',
+    };
+    t.equal(vbitReliefTipDiameter(carving), 0.2);
+    t.equal(vbitReliefTipDiameter({
+        ...carving,
+        toolDiameter: 0.2,
+    }), null);
+    t.equal(vbitReliefTipDiameter({
+        toolType: 'flat',
+        toolDiameter: 3.175,
+        toolAngle: 180,
+        toolShaftDiameter: 3.175,
+        definitionName: 'Flat End Mill',
+    }), null);
     t.end();
 });
 

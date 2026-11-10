@@ -6,7 +6,7 @@ import SVGParser from '../../../../shared/lib/SVGParser';
 import { SOURCE_TYPE_RASTER, TOOLPATH_TYPE_VECTOR } from '../../../constants';
 import slice from '../../../slicer/call-engine';
 import logger from '../../../lib/logger';
-import { vbitPocketDiameter } from '../../../lib/cnc/vbitPocketDiameter';
+import { vbitPocketDiameter, vbitReliefTipDiameter } from '../../../lib/cnc/vbitPocketDiameter';
 import sendMessage from '../utils/sendMessage';
 
 const log = logger('worker:generateToolPath');
@@ -81,6 +81,15 @@ const generateLaserToolPathFromEngine = async (allTasks, onProgress) => {
                         modelInfo.toolParams = {
                             ...modelInfo.toolParams,
                             toolDiameter: cuttingDiameter,
+                        };
+                    }
+                }
+                if (modelInfo.type === 'sculpt' || modelInfo.mode === 'mesh') {
+                    const tipDiameter = vbitReliefTipDiameter(modelInfo.toolParams);
+                    if (tipDiameter != null && modelInfo.toolParams) {
+                        modelInfo.toolParams = {
+                            ...modelInfo.toolParams,
+                            toolDiameter: tipDiameter,
                         };
                     }
                 }
