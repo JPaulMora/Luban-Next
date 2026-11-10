@@ -24,13 +24,97 @@ import {
 } from '../../../../constants';
 import ContextMenu from '../../../components/ContextMenu';
 import { getModelColorPalette } from '../../../../toolpaths/utils';
-import { toolpathLineColorCss } from '../../../../toolpaths/toolpathColors';
+import { sameToolpathLineColor, toolpathLineColorCss, toolpathLinePalette } from '../../../../toolpaths/toolpathColors';
 import { ColorSwatchChips } from '../../../views/ToolPathConfigurations/laser/ColorSwatches';
+import Popover from '../../../components/Popover';
 
+
+function PreviewColorSwatch({ color, onChange }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <Popover
+            visible={open}
+            trigger="click"
+            placement="bottomLeft"
+            title={i18n._('Toolpath color')}
+            onVisibleChange={setOpen}
+            content={(
+                <div style={{ display: 'flex', flexWrap: 'wrap', width: 120 }}>
+                    {toolpathLinePalette().map((entry) => {
+                        const selected = sameToolpathLineColor(entry, color);
+                        const key = `${entry[0]}-${entry[1]}-${entry[2]}`;
+                        return (
+                            <span
+                                key={key}
+                                role="button"
+                                tabIndex={0}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    onChange(entry);
+                                    setOpen(false);
+                                }}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter' || event.key === ' ') {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        onChange(entry);
+                                        setOpen(false);
+                                    }
+                                }}
+                                style={{
+                                    display: 'inline-block',
+                                    width: 18,
+                                    height: 18,
+                                    margin: 4,
+                                    borderRadius: 2,
+                                    background: toolpathLineColorCss(entry),
+                                    border: selected ? '2px solid #2A2C2E' : '1px solid #B9BCBF',
+                                    boxSizing: 'border-box',
+                                    cursor: 'pointer'
+                                }}
+                            />
+                        );
+                    })}
+                </div>
+            )}
+        >
+            <span
+                role="button"
+                tabIndex={0}
+                title={i18n._('Toolpath color')}
+                onClick={(event) => event.stopPropagation()}
+                onMouseUp={(event) => event.stopPropagation()}
+                onKeyDown={(event) => {
+                    event.stopPropagation();
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setOpen(!open);
+                    }
+                }}
+                style={{
+                    display: 'inline-block',
+                    width: 12,
+                    height: 12,
+                    borderRadius: 2,
+                    background: toolpathLineColorCss(color),
+                    border: '1px solid #B9BCBF',
+                    marginRight: 8,
+                    flexShrink: 0,
+                    alignSelf: 'center',
+                    cursor: 'pointer'
+                }}
+            />
+        </Popover>
+    );
+}
+PreviewColorSwatch.propTypes = {
+    color: PropTypes.array.isRequired,
+    onChange: PropTypes.func.isRequired
+};
 
 const ToolpathItem = ({
     toolPath, selectedToolPathIDArray, selectToolPathId, selectOneToolPathId, selectToolPathById,
-    onClickVisible, setEditingToolpath, disabled, showContextMenu
+    onClickVisible, setEditingToolpath, disabled, showContextMenu, onSetPreviewColor
 }) => {
     if (!toolPath) {
         return null;
@@ -99,19 +183,9 @@ const ToolpathItem = ({
                     onClick={handleOnClick}
                 >
                     {toolPath.previewColor && (
-                        <span
-                            title={i18n._('Toolpath color')}
-                            style={{
-                                display: 'inline-block',
-                                width: 12,
-                                height: 12,
-                                borderRadius: 2,
-                                background: toolpathLineColorCss(toolPath.previewColor),
-                                border: '1px solid #B9BCBF',
-                                marginRight: 8,
-                                flexShrink: 0,
-                                alignSelf: 'center'
-                            }}
+                        <PreviewColorSwatch
+                            color={toolPath.previewColor}
+                            onChange={(color) => onSetPreviewColor(toolPath.id, color)}
                         />
                     )}
                     <span className={classNames(styles['prefix-name'])}>
@@ -164,7 +238,8 @@ ToolpathItem.propTypes = {
     showContextMenu: PropTypes.func.isRequired,
 
     setEditingToolpath: PropTypes.func.isRequired,
-    disabled: PropTypes.bool.isRequired
+    disabled: PropTypes.bool.isRequired,
+    onSetPreviewColor: PropTypes.func.isRequired
 };
 
 
@@ -255,6 +330,9 @@ const ToolPathListBox = (props) => {
             setTimeout(() => {
                 contextMenuRef.current.show(event);
             }, 0);
+        },
+        setPreviewColor: (id, color) => {
+            dispatch(editorActions.setToolPathPreviewColor(props.headType, id, color));
         }
     };
     useEffect(() => {
@@ -328,6 +406,7 @@ const ToolPathListBox = (props) => {
                                     onClickVisible={actions.onClickVisible}
                                     setEditingToolpath={setEditingToolpath}
                                     showContextMenu={actions.showContextMenu}
+                                    onSetPreviewColor={actions.setPreviewColor}
                                     disabled={isOnABPosition || inProgress}
                                 />
                             );

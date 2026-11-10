@@ -393,6 +393,12 @@ export const processActions = {
         dispatch(projectActions.autoSaveEnvironment(headType));
     },
 
+    setToolPathPreviewColor: (headType, toolPathId, previewColor) => (dispatch, getState) => {
+        const toolPathGroup = getState()[headType].toolPathGroup as ToolPathGroup;
+        toolPathGroup.setPreviewColor(toolPathId, previewColor);
+        dispatch(projectActions.autoSaveEnvironment(headType));
+    },
+
     updateToolPath: (headType, toolPathId, newState) => (dispatch, getState) => {
         const { toolPathGroup, materials } = getState()[headType];
         toolPathGroup.updateToolPath(toolPathId, newState, { materials });

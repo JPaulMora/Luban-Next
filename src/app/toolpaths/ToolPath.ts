@@ -63,6 +63,8 @@ class ToolPath {
 
     private appliedPreviewColorKey = '';
 
+    private previewMaterialReady = false;
+
     public toolParams;
 
     public materials;
@@ -583,9 +585,10 @@ class ToolPath {
             return;
         }
         const key = this.previewColor.join(',');
-        if (this.appliedPreviewColorKey === key) {
+        if (this.appliedPreviewColorKey === key && this.previewMaterialReady) {
             return;
         }
+        const colorChanged = this.appliedPreviewColorKey !== key;
         const [red, green, blue] = this.previewColor;
         this.object.traverse((child) => {
             const line = child as THREE.Line;
@@ -595,18 +598,24 @@ class ToolPath {
             if (!gCodes || !colors) {
                 return;
             }
-            for (let i = 0; i < gCodes.count; i++) {
-                if (gCodes.getX(i) === 0) {
-                    continue;
+            if (colorChanged) {
+                for (let i = 0; i < gCodes.count; i++) {
+                    if (gCodes.getX(i) === 0) {
+                        continue;
+                    }
+                    colors.setXYZ(i, red, green, blue);
                 }
-                colors.setXYZ(i, red, green, blue);
+                colors.needsUpdate = true;
             }
-            colors.needsUpdate = true;
-            if (line.material === MATERIAL_SELECTED) {
-                line.material = createToolpathMaterial(false);
+            const uniforms = line.material && line.material.uniforms;
+            const keepsHue = uniforms && uniforms.u_keep_hue && uniforms.u_keep_hue.value;
+            if (line.material === MATERIAL_SELECTED || !keepsHue) {
+                const selected = uniforms && uniforms.u_selected && uniforms.u_selected.value;
+                line.material = createToolpathMaterial(!!selected, true);
             }
         });
         this.appliedPreviewColorKey = key;
+        this.previewMaterialReady = true;
     }
 
     private coloredLineBytes(colors, gCodes) {
@@ -650,6 +659,7 @@ class ToolPath {
         const colorBytes = this.coloredLineBytes(colors.send, gCodes.send);
         if (this.previewColor) {
             this.appliedPreviewColorKey = this.previewColor.join(',');
+            this.previewMaterialReady = headType === 'cnc';
         }
         const colorsAttribute = new THREE.Uint8BufferAttribute(colorBytes, 3);
         colorsAttribute.normalized = true;
@@ -657,7 +667,7 @@ class ToolPath {
         bufferGeometry.setAttribute('a_g_code', gCodeAttribute);
         bufferGeometry.setAttribute('a_color', colorsAttribute);
 
-        const material = createToolpathMaterial(!!isSelected);
+        const material = createToolpathMaterial(!!isSelected, headType === 'cnc');
         let obj;
         if (headType === 'laser') {
             if (movementMode === 'greyscale-dot') {

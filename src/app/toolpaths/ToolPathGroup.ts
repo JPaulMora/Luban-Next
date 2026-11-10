@@ -8,7 +8,7 @@ import { SolidSimRenderer } from '../lib/renderer/SolidSimRenderer';
 import { generateModelDefaultConfigs } from '../models/ModelInfoUtils';
 import ThreeModel from '../models/ThreeModel';
 import ToolPath from './ToolPath';
-import { toolpathLineColor } from './toolpathColors';
+import { ToolpathLineColor, unusedToolpathLineColor } from './toolpathColors';
 import { SUCCESS, createToolPathNameByType, getModelsByToolPathType, getToolPathType } from './utils';
 
 class ToolPathGroup {
@@ -287,12 +287,24 @@ class ToolPathGroup {
         if (this.headType !== 'cnc') {
             return;
         }
-        this.toolPaths.forEach((toolPath, index) => {
+        const used = [];
+        this.toolPaths.forEach((toolPath) => {
             if (!toolPath.previewColor) {
-                toolPath.previewColor = toolpathLineColor(index);
+                toolPath.previewColor = unusedToolpathLineColor(used);
             }
+            used.push(toolPath.previewColor);
             toolPath.applyPreviewColorToLines();
         });
+    }
+
+    public setPreviewColor(toolPathId: string, previewColor: ToolpathLineColor) {
+        const toolPath = this._getToolPath(toolPathId);
+        if (!toolPath || !Array.isArray(previewColor)) {
+            return;
+        }
+        toolPath.previewColor = [previewColor[0], previewColor[1], previewColor[2]];
+        toolPath.applyPreviewColorToLines();
+        this._updated();
     }
 
     public saveToolPath(toolPathInfo, options, shouldCommitGenerate = true) {
@@ -300,8 +312,14 @@ class ToolPathGroup {
         if (toolPath) {
             toolPath.updateState({ ...toolPathInfo, ...options });
         } else {
+            const used: ToolpathLineColor[] = [];
+            this.toolPaths.forEach((item) => {
+                if (item.previewColor) {
+                    used.push(item.previewColor);
+                }
+            });
             const previewColor = toolPathInfo.previewColor
-                || (this.headType === 'cnc' ? toolpathLineColor(this.toolPaths.length) : null);
+                || (this.headType === 'cnc' ? unusedToolpathLineColor(used) : null);
             toolPath = new ToolPath({
                 ...toolPathInfo,
                 ...options,

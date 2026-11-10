@@ -12,9 +12,28 @@ const TOOLPATH_LINE_COLORS: ToolpathLineColor[] = [
     [196, 160, 18],
 ];
 
+export function toolpathLinePalette(): ToolpathLineColor[] {
+    return TOOLPATH_LINE_COLORS.map((color) => [color[0], color[1], color[2]]);
+}
+
 export function toolpathLineColor(index: number): ToolpathLineColor {
     const color = TOOLPATH_LINE_COLORS[index % TOOLPATH_LINE_COLORS.length];
     return [color[0], color[1], color[2]];
+}
+
+export function sameToolpathLineColor(left: ToolpathLineColor, right: ToolpathLineColor): boolean {
+    return !!left && !!right && left[0] === right[0] && left[1] === right[1] && left[2] === right[2];
+}
+
+// Prefer a palette entry no other path is using. After the palette is exhausted, repeat by count.
+export function unusedToolpathLineColor(used: ToolpathLineColor[]): ToolpathLineColor {
+    const free = TOOLPATH_LINE_COLORS.find((color) => {
+        return !used.some((item) => sameToolpathLineColor(item, color));
+    });
+    if (free) {
+        return [free[0], free[1], free[2]];
+    }
+    return toolpathLineColor(used.length);
 }
 
 export function toolpathLineColorCss(color: ToolpathLineColor): string {
