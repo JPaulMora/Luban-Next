@@ -42,7 +42,7 @@ jobs:
 
             -   name: Init Props
                 run: |
-                    $PRODUCT_NAME="Snapmaker Luban"
+                    $PRODUCT_NAME="Luban Next"
                     $PACKAGE_NAME="Snapmaker-luban"
                     $PACKAGE_VERSION= node -e "console.log(require('./src/package.json').version)"
                     $RELEASE="$PACKAGE_NAME-$PACKAGE_VERSION"
@@ -103,7 +103,7 @@ jobs:
 
            -   name: Init Props
                run: |
-                    PRODUCT_NAME="Snapmaker Luban"
+                    PRODUCT_NAME="Luban Next"
                     PACKAGE_NAME="Snapmaker-luban"
                     PACKAGE_VERSION=`node -e "console.log(require('./src/package.json').version)"`
                     RELEASE=${PACKAGE_NAME}-${PACKAGE_VERSION}
@@ -192,7 +192,7 @@ jobs:
                 run: npm run build:linux-x64
 
             -   run: |
-                    PRODUCT_NAME="Snapmaker Luban"
+                    PRODUCT_NAME="Luban Next"
                     PACKAGE_NAME="Snapmaker-luban"
                     PACKAGE_VERSION=`node -e "console.log(require('./src/package.json').version)"`
                     RELEASE=${PACKAGE_NAME}-${PACKAGE_VERSION}
