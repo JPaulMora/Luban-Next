@@ -349,7 +349,7 @@ class SVGCanvas extends React.PureComponent<SVGCanvasProps> {
 
         this.svgContainer.append(this.svgContent);
 
-        const comment = document.createComment('Created by Snapmaker Luban');
+        const comment = document.createComment('Created by Luban Next');
         this.svgContent.append(comment);
 
         this.svgContentGroup = new SVGContentGroup({

@@ -95,7 +95,7 @@ export function processGcodeHeaderAfterCuraEngine(gcodeFilePath: string, metadat
         `;nozzle_1_material: ${metadata?.material1}`,
         ';Header End',
         '',
-        `;Snapmaker Luban ${settings.version}`,
+        `;Luban Next ${settings.version}`,
         `;${date.toDateString()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
         '',
     );
@@ -195,7 +195,7 @@ export async function postProcessorV1(sliceResult: SliceResult, metadata: Metada
 
     headerCodes.push(`;Thumbnail:${metadata.thumbnail}`);
     headerCodes.push(';Header End');
-    headerCodes.push(`;Snapmaker Luban ${settings.version}`);
+    headerCodes.push(`;Luban Next ${settings.version}`);
     headerCodes.push(`;${date.toDateString()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`);
     headerCodes.push('');
 

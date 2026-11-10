@@ -246,7 +246,7 @@ const generateGcode = ({ toolPaths, size, toolHead, origin, jobOffsetMode, serie
     const date = new Date();
     headerGcodes.push(
         ';Header End',
-        `;Snapmaker Luban ${settings.version}`,
+        `;Luban Next ${settings.version}`,
         `;${date.toDateString()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`,
         '',
     );
