@@ -100,7 +100,7 @@
     "@types/superagent": "^3.8.3",
     "@xmldom/xmldom": "^0.8.2",
     "antd": "4.24.16",
-    "async": "3.2.4",
+    "async": "3.2.6",
     "bcrypt-nodejs": "0.0.3",
     "bezier-js": "^6.1.0",
     "body-parser": "1.20.1",
