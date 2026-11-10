@@ -9,7 +9,6 @@ import { generateModelDefaultConfigs, DEFAULT_TEXT_CONFIG } from './ModelInfoUti
 import { computeTransformationSizeForTextVector } from '../flux/editor/actions-base';
 import SvgModel from './SvgModel';
 import api from '../api';
-import { attachChiselMesh, cncChiselOptions, ensureChiselScale } from '../lib/chisel-mesh';
 // import { DEFAULT_SCALE } from '../ui/SVGEditor/constants';
 import { transformListToTransform, transformBox } from '../ui/SVGEditor/element-transform';
 
@@ -553,8 +552,7 @@ class SVGActionsFactory {
                     ...elemConfig
                 };
                 res = await api.convertTextToSvg({
-                    ...newConfig,
-                    ...cncChiselOptions(headType, newConfig)
+                    ...newConfig
                 });
                 if (res.body.family !== elemConfig['font-family']) {
                     elemConfig['font-family'] = res.body.family;
@@ -597,10 +595,6 @@ class SVGActionsFactory {
                 size: this.size
             };
             const svgModel = this.modelGroup.addModel(options);
-            if (isText) {
-                ensureChiselScale(svgModel, sourceWidth, textSize.width);
-            }
-            attachChiselMesh(svgModel, res.body.chisel);
             svgModel.setParent(this.svgContentGroup.group);
             svgModel.setPreSelection(this.svgContentGroup.preSelectionGroup);
             return svgModel;
@@ -1499,16 +1493,9 @@ class SVGActionsFactory {
         if (options.style !== undefined) {
             newConfig.style = options.style;
         }
-        if (options.steepAngle !== undefined) {
-            newConfig.steepAngle = options.steepAngle;
-        }
-        if (options.shallowAngle !== undefined) {
-            newConfig.shallowAngle = options.shallowAngle;
-        }
 
         return api.convertTextToSvg({
-            ...newConfig,
-            ...cncChiselOptions(this.modelGroup.headType, newConfig, model.gcodeConfig)
+            ...newConfig
         })
             .then(async (res) => {
                 const { originalName, uploadName, sourceWidth, sourceHeight } = res.body;
@@ -1535,8 +1522,6 @@ class SVGActionsFactory {
                     }
                 };
                 this.updateElementImage(uploadName);
-                ensureChiselScale(model, sourceWidth, textSize.width);
-                attachChiselMesh(model, res.body.chisel);
                 model.updateAndRefresh({
                     ...baseUpdateData,
                     config: newConfig

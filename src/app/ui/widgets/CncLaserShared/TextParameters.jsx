@@ -8,9 +8,10 @@ import i18n from '../../../lib/i18n';
 import { NumberInput as Input, TextAreaInput } from '../../components/Input';
 import TipTrigger from '../../components/TipTrigger';
 import Anchor from '../../components/Anchor';
+import { Button } from '../../components/Buttons';
 import SvgIcon from '../../components/SvgIcon';
 
-const TextParameters = ({ headType, modifyText, disabled }) => {
+const TextParameters = ({ headType, modifyText, createChisel, disabled }) => {
     const config = useSelector(state => state[headType]?.modelGroup?.getSelectedModel()?.config);
     const fonts = useSelector(state => state?.text?.fonts);
     const fontOptions = fonts.map((font) => ({
@@ -49,12 +50,6 @@ const TextParameters = ({ headType, modifyText, disabled }) => {
         },
         onChangeAlignment: (newAlignment) => {
             modifyText(null, { alignment: newAlignment });
-        },
-        onChangeSteepAngle: (steepAngle) => {
-            modifyText(null, { steepAngle });
-        },
-        onChangeShallowAngle: (shallowAngle) => {
-            modifyText(null, { shallowAngle });
         }
     };
 
@@ -175,33 +170,16 @@ const TextParameters = ({ headType, modifyText, disabled }) => {
                     </TipTrigger>
                     {headType === 'cnc' && (
                         <React.Fragment>
-                            <div className="margin-vertical-8">
-                                {i18n._('key-CncLaser/TextSection-The groove is steep on the left and top, shallow on the right and bottom, and stops at the target depth.')}
-                            </div>
-                            <div className="sm-flex height-32 margin-vertical-8">
-                                <span className="sm-flex-auto sm-flex-order-negative width-120">{i18n._('key-CncLaser/TextSection-Left and top')}</span>
-                                <Input
-                                    suffix="°"
-                                    disabled={disabled}
-                                    min={8}
-                                    max={82}
-                                    className="sm-flex-width align-r"
-                                    value={Number(config.steepAngle) || 70}
-                                    onChange={actions.onChangeSteepAngle}
-                                />
-                            </div>
-                            <div className="sm-flex height-32 margin-vertical-8">
-                                <span className="sm-flex-auto sm-flex-order-negative width-120">{i18n._('key-CncLaser/TextSection-Right and bottom')}</span>
-                                <Input
-                                    suffix="°"
-                                    disabled={disabled}
-                                    min={8}
-                                    max={82}
-                                    className="sm-flex-width align-r"
-                                    value={Number(config.shallowAngle) || 28}
-                                    onChange={actions.onChangeShallowAngle}
-                                />
-                            </div>
+                            <Button
+                                type="default"
+                                priority="level-two"
+                                width="max-content"
+                                className="margin-top-8"
+                                disabled={disabled}
+                                onClick={createChisel}
+                            >
+                                {i18n._('key-CncLaser/TextSection-Create chisel model')}
+                            </Button>
                         </React.Fragment>
                     )}
 
@@ -216,7 +194,8 @@ TextParameters.propTypes = {
     headType: PropTypes.string.isRequired,
     disabled: PropTypes.bool,
 
-    modifyText: PropTypes.func.isRequired
+    modifyText: PropTypes.func.isRequired,
+    createChisel: PropTypes.func
 };
 
 export default TextParameters;

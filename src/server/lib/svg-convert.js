@@ -1,42 +1,14 @@
 import fs from 'fs';
-import path from 'path';
 import _ from 'lodash';
 import potrace from 'potrace';
 import * as opentype from 'opentype.js';
+import { solidFromCommands, sceneTriangles, stlBuffer } from './chisel';
 import { pathWithRandomSuffix } from './random-utils';
 // import fontManager from './FontManager';
 import logger from './logger';
 import SVGParser from '../../shared/lib/SVGParser';
 import fontManager from '../../shared/lib/FontManager';
 import { svgToString } from '../../shared/lib/SVGParser/SvgToString';
-
-/* global __non_webpack_require__ */
-function nativeRequire(id) {
-    // Webpack's own require cannot see this file beside the app.
-    // eslint-disable-next-line camelcase
-    if (typeof __non_webpack_require__ === 'function') {
-        // eslint-disable-next-line camelcase
-        return __non_webpack_require__(id);
-    }
-    // The development compile has no webpack runtime.
-    // eslint-disable-next-line no-new-func
-    return new Function('return require')()(id);
-}
-
-function loadBurinPackage() {
-    const candidates = [
-        path.resolve(__dirname, '../../../../packages/burin/index.js'),
-        path.resolve(__dirname, '../../packages/burin/index.js')
-    ];
-    for (let i = 0; i < candidates.length; i += 1) {
-        if (fs.existsSync(candidates[i])) {
-            return nativeRequire(candidates[i]);
-        }
-    }
-    throw new Error(`Cannot find packages/burin (${candidates.join(', ')})`);
-}
-
-const burin = loadBurinPackage();
 
 const log = logger('svg-convert');
 
@@ -114,50 +86,6 @@ const convertRasterToSvg = (options) => {
     });
 };
 
-const chiselLetters = (fontObj, lines, widths, maxWidth, alignment, startY, fontSize, lineHeight, depthUnits, options) => {
-    fontManager.loadDefaultFont();
-    const letters = [];
-    let cursorY = startY;
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const lineWidth = widths[i];
-        let cursorX = 0;
-        if (alignment === 'middle') {
-            cursorX = (maxWidth - lineWidth) / 2;
-        } else if (alignment !== 'left') {
-            cursorX = maxWidth - lineWidth;
-        }
-        let diffWidth = 0;
-        let index = 0;
-        fontObj.forEachGlyph(line, cursorX, cursorY, fontSize, {}, (glyph, glyphX, glyphY, glyphSize) => {
-            let usedGlyph = glyph;
-            let usedFont = fontObj;
-            const originX = glyphX + diffWidth;
-            if (glyph.index === 0 && fontManager.defaultFont) {
-                usedGlyph = fontManager.defaultFont.charToGlyph(line[index]);
-                usedFont = fontManager.defaultFont;
-                const glyphWidth = (glyphSize * glyph.advanceWidth) / fontObj.unitsPerEm;
-                const newWidth = (glyphSize * usedGlyph.advanceWidth) / usedFont.unitsPerEm;
-                diffWidth += newWidth - glyphWidth;
-            }
-            index += 1;
-            const glyphPath = usedGlyph.getPath(originX, glyphY, glyphSize, {}, usedFont);
-            const contours = burin.contoursFromCommands(glyphPath.commands)
-                .map((ring) => ring.map((point) => [point[0], -point[1]]));
-            const mesh = burin.chiselContours(contours, {
-                steepAngle: options.steepAngle,
-                shallowAngle: options.shallowAngle,
-                targetDepth: depthUnits
-            });
-            if (mesh) {
-                letters.push(mesh);
-            }
-        });
-        cursorY += fontSize * lineHeight;
-    }
-    return letters;
-};
-
 const convertTextToSvg = async (options) => {
     const { text, 'font-size': fontSize, 'line-height': lineHeight, 'font-family': fontFamily, style, name, alignment } = options;
     const uploadName = pathWithRandomSuffix(name).replace(/\.svg$/i, 'parsed.svg');
@@ -189,7 +117,6 @@ const convertTextToSvg = async (options) => {
     // We use descender line as the bottom of a line, first line with lineHeight = 1
     let y = (ascender - descender + sTypoLineGap) > unitsPerEm ? estimatedFontSize
             : (realUnitsPerEm + descender) / realUnitsPerEm * estimatedFontSize, x = 0;
-    const startY = y;
     const fullPath = new opentype.Path();
     for (let i = 0; i < numberOfLines; i++) {
         const line = lines[i];
@@ -214,28 +141,28 @@ const convertTextToSvg = async (options) => {
     // const height = estimatedFontSize + estimatedFontSize * lineHeight * (numberOfLines - 1);
     const height = boundingBox.y2 - boundingBox.y1;
 
-    let chisel = null;
-    if (options.chisel) {
-        const millimeters = (fontSize / 72) * 25.4;
-        const unitPerMm = millimeters > 0 ? estimatedFontSize / millimeters : 10;
-        const targetDepth = (Number(options.targetDepth) > 0 ? Number(options.targetDepth) : 2) * unitPerMm;
-        const letters = chiselLetters(
-            fontObj,
-            lines,
-            widths,
-            maxWidth,
-            alignment,
-            startY,
-            estimatedFontSize,
-            lineHeight,
-            targetDepth,
-            options
-        );
-        const center = {
-            x: (boundingBox.x1 + boundingBox.x2) / 2,
-            y: -((boundingBox.y1 + boundingBox.y2) / 2)
-        };
-        chisel = letters.map((mesh) => burin.sceneTriangles(mesh, center).map((value) => Math.round(value * 1000) / 1000));
+    let stl = null;
+    const boxReady = [boundingBox.x1, boundingBox.y1, boundingBox.x2, boundingBox.y2].every(Number.isFinite)
+        && boundingBox.x2 > boundingBox.x1
+        && boundingBox.y2 > boundingBox.y1;
+    if (options.chiselStl && boxReady) {
+        try {
+            const solid = solidFromCommands(fullPath.commands, 1, boundingBox);
+            const triangles = solid ? sceneTriangles(solid.triangles) : [];
+            if (solid && triangles.length >= 9) {
+                const uploadStl = pathWithRandomSuffix('chisel.stl');
+                fs.writeFileSync(`${process.env.Tmpdir}/${uploadStl}`, stlBuffer(triangles));
+                stl = {
+                    originalName: `${String(name || 'text').slice(0, 40)}.stl`,
+                    uploadName: uploadStl,
+                    sourceWidth: solid.width,
+                    sourceHeight: solid.height
+                };
+            }
+        } catch (error) {
+            // The SVG is the conversion result. A failed chisel solid must not drop it.
+            log.error(`Fail to build chisel solid: ${error && error.stack ? error.stack : error}`);
+        }
     }
 
     const svgString = _.template(TEMPLATE)({
@@ -265,7 +192,7 @@ const convertTextToSvg = async (options) => {
                     family: fontObj?.names?.fontFamily?.en,
                     sourceWidth: width,
                     sourceHeight: height,
-                    chisel
+                    stl
                 });
             }
         });

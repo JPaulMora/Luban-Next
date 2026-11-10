@@ -8,7 +8,7 @@ import { v4 as uuid } from 'uuid';
 import { normalizeStackSettings } from '../../../shared/lib/stackedModel';
 import { isEqual, round, whetherTransformed } from '../../../shared/lib/utils';
 import api from '../../api';
-import { attachChiselMesh, cncChiselOptions } from '../../lib/chisel-mesh';
+import { cncChiselOptions } from '../../lib/chisel-mesh';
 import { controller } from '../../communication/socket-communication';
 import {
     COORDINATE_MODE_BOTTOM_CENTER,
@@ -960,8 +960,7 @@ export const actions = {
         headType,
         {
             originalName, uploadName, sourceWidth, sourceHeight, mode, sourceType,
-            config, gcodeConfig, transformation, modelID, zIndex, isLimit, loadFrom, processImageName,
-            chiselPositions
+            config, gcodeConfig, transformation, modelID, zIndex, isLimit, loadFrom, processImageName
         }
     ) => async (dispatch, getState) => {
         const { size, promptDamageModel } = getState().machine;
@@ -1092,7 +1091,6 @@ export const actions = {
         };
 
         const model = modelGroup.addModel(options);
-        attachChiselMesh(model, chiselPositions);
         model.setPreSelection(contentGroup.preSelectionGroup);
         model.needRepair = isDamage;
         const promptTasks = [];
@@ -1134,11 +1132,10 @@ export const actions = {
 
     insertDefaultTextVector: headType => dispatch => {
         api.convertTextToSvg({
-            ...DEFAULT_TEXT_CONFIG,
-            ...cncChiselOptions(headType, DEFAULT_TEXT_CONFIG, { targetDepth: 2 })
+            ...DEFAULT_TEXT_CONFIG
         }).then(async res => {
             // const { name, filename, width, height } = res.body;
-            const { originalName, uploadName, sourceWidth, sourceHeight, chisel } = res.body;
+            const { originalName, uploadName, sourceWidth, sourceHeight } = res.body;
             const sourceType = 'text';
             const mode = 'vector';
 
@@ -1149,11 +1146,39 @@ export const actions = {
                     sourceWidth,
                     sourceHeight,
                     mode,
-                    sourceType,
-                    chiselPositions: chisel
+                    sourceType
                 })
             );
         });
+    },
+
+    chiselTextToStl: headType => async (dispatch, getState) => {
+        const { modelGroup } = getState()[headType];
+        const model = modelGroup.getSelectedModel();
+        if (!model || !model.config) {
+            return;
+        }
+        const res = await api.convertTextToSvg({
+            ...model.config,
+            ...cncChiselOptions(headType),
+            name: model.config.text || 'text'
+        });
+        const stl = res.body && res.body.stl;
+        if (!stl) {
+            return;
+        }
+        dispatch(actions.generateModel(headType, {
+            originalName: stl.originalName,
+            uploadName: stl.uploadName,
+            sourceWidth: stl.sourceWidth,
+            sourceHeight: stl.sourceHeight,
+            sourceType: SOURCE_TYPE.IMAGE3D,
+            mode: 'mesh',
+            transformation: {
+                positionX: model.transformation.positionX,
+                positionY: model.transformation.positionY
+            }
+        }));
     },
 
     getMouseTargetByCoordinate: (headType, x, y) => (dispatch, getState) => {

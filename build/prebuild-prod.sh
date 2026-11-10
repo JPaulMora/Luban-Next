@@ -56,9 +56,3 @@ cp -r resources/fonts "$RESOURCES_DIR"
 cp -r resources/luban-case-library "$RESOURCES_DIR"
 cp -r resources/scenes "$RESOURCES_DIR"
 cp -r resources/engine-test "$RESOURCES_DIR"
-
-#
-# Chisel meshes. The server bundle loads this beside the app.
-#
-mkdir -p "$DEST_DIR/packages"
-cp -R packages/burin "$DEST_DIR/packages/burin"

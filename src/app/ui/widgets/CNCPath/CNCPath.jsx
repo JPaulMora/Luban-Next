@@ -76,6 +76,7 @@ const CNCPath = ({ widgetActions }) => {
                         <TextParameters
                             disabled={!selectedModelVisible}
                             modifyText={actions.modifyText}
+                            createChisel={() => dispatch(editorActions.chiselTextToStl(HEAD_CNC))}
                             headType={HEAD_CNC}
                         />
                     )}
