@@ -1,9 +1,7 @@
 import * as THREE from 'three';
-import { DEFAULT_LUBAN_HOST } from '../../constants';
 
 export class ViewPathRenderer {
     async render(viewPaths, size) {
-        await this._generateTexture();
         const objs = this._generateViewPathObjs(viewPaths);
         const background = this._generateBackground(viewPaths, size);
 
@@ -12,14 +10,6 @@ export class ViewPathRenderer {
         g.add(objs);
 
         return g;
-    }
-
-    _generateTexture() {
-        return new Promise(resolve => {
-            this.texture = new THREE.TextureLoader().load(`${DEFAULT_LUBAN_HOST}/resources/images/wood.png`, () => {
-                resolve();
-            });
-        });
     }
 
     _generateSvgViewPathObj(viewPath) {
@@ -119,7 +109,7 @@ export class ViewPathRenderer {
                 const underCut = stockDepth - boundingBox.length.z - 1;
                 if (underCut >= 1) {
                     const boxPoints = this._generateByBox(boundingBox.min, boundingBox.max);
-                    const boxMesh = this._generateMesh(new THREE.Shape(boxPoints), underCut, '#cccccc');
+                    const boxMesh = this._generateMesh(new THREE.Shape(boxPoints), underCut);
                     boxMesh.position.z = -stockDepth;
                     group.add(boxMesh);
                 }
@@ -179,26 +169,26 @@ export class ViewPathRenderer {
         ];
     }
 
-    _generateMaterial(color = '#cea775') {
-        // Transparent solid overlay — default mesh preview, not the Boolean sim
+    _generateMaterial() {
+        // Opaque gray-blue heightfield. The Boolean sim keeps its own wood material.
         return new THREE.MeshPhongMaterial(
             {
-                color: color,
-                shininess: 0,
-                transparent: true,
-                opacity: 0.45,
-                depthWrite: false,
+                color: '#8aa4b8',
+                shininess: 8,
+                transparent: false,
+                opacity: 1,
+                depthWrite: true,
                 side: THREE.DoubleSide,
             }
         );
     }
 
-    _generateMesh(shapes, depth, color) {
+    _generateMesh(shapes, depth) {
         const geometry = new THREE.ExtrudeGeometry(shapes, {
             steps: 2,
             depth: depth,
             bevelEnabled: false
         });
-        return new THREE.Mesh(geometry, this._generateMaterial(color));
+        return new THREE.Mesh(geometry, this._generateMaterial());
     }
 }
