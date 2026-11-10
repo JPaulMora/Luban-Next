@@ -101,7 +101,7 @@
     "@xmldom/xmldom": "^0.8.2",
     "antd": "4.24.16",
     "async": "3.2.6",
-    "bcrypt-nodejs": "0.0.3",
+    "bcryptjs": "3.0.3",
     "bezier-js": "^6.1.0",
     "body-parser": "1.20.1",
     "canvg": "3.0.11",

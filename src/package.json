@@ -22,7 +22,7 @@
     "@snapmaker/snapmaker-lunar": "^1.4.9",
     "@snapmaker/snapmaker-sacp-sdk": "0.1.1",
     "@xmldom/xmldom": "^0.8.2",
-    "bcrypt-nodejs": "0.0.3",
+    "bcryptjs": "3.0.3",
     "body-parser": "1.20.1",
     "chalk": "2.4.2",
     "commander": "7.2.0",

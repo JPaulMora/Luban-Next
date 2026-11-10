@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
-// import bcrypt from 'bcrypt-nodejs';
+// import bcrypt from 'bcryptjs';
 import castArray from 'lodash/castArray';
 import isPlainObject from 'lodash/isPlainObject';
 import find from 'lodash/find';
