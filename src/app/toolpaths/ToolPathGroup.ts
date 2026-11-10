@@ -549,6 +549,23 @@ class ToolPathGroup {
         return toolPath;
     }
 
+    /**
+     * CNC tool-change Z offset only. Does not mark the path warning: the cut
+     * geometry is unchanged and G-code can be regenerated from existing files.
+     */
+    public updateToolChangeZOffset(toolPathId, toolChangeZOffset) {
+        const toolPath = this._getToolPath(toolPathId);
+        if (!toolPath) {
+            return null;
+        }
+        toolPath.toolParams = {
+            ...toolPath.toolParams,
+            toolChangeZOffset,
+        };
+        this._updated();
+        return toolPath;
+    }
+
     public getThumbnailObject() {
         const toolPaths = this._getCheckAndSuccessToolPaths();
 

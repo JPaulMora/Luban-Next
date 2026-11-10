@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 import classNames from 'classnames';
+import { InputNumber } from 'antd';
 // import { cloneDeep, isNull } from 'lodash';
 import SvgIcon from '../../../components/SvgIcon';
 import Anchor from '../../../components/Anchor';
@@ -20,6 +21,7 @@ import {
     PAGE_EDITOR,
     PAGE_PROCESS,
     DISPLAYED_TYPE_TOOLPATH,
+    HEAD_CNC,
     HEAD_LASER
 } from '../../../../constants';
 import ContextMenu from '../../../components/ContextMenu';
@@ -27,6 +29,10 @@ import { getModelColorPalette } from '../../../../toolpaths/utils';
 import { sameToolpathLineColor, toolpathLineColorCss, toolpathLinePalette } from '../../../../toolpaths/toolpathColors';
 import { ColorSwatchChips } from '../../../views/ToolPathConfigurations/laser/ColorSwatches';
 import Popover from '../../../components/Popover';
+import {
+    cncToolsDiffer,
+    resolveToolChangeZOffset,
+} from '../../../../../shared/lib/cncToolChange';
 
 
 function PreviewColorSwatch({ color, onChange }) {
@@ -112,9 +118,89 @@ PreviewColorSwatch.propTypes = {
     onChange: PropTypes.func.isRequired
 };
 
+function toolDefinitionLabel(toolParams) {
+    const name = toolParams?.definitionName;
+    if (typeof name === 'string' && name.trim().length > 0) {
+        return name.trim();
+    }
+    return '';
+}
+
+function countsForToolChange(toolPath) {
+    return Boolean(
+        toolPath
+        && toolPath.visible
+        && Array.isArray(toolPath.visibleModelIDs)
+        && toolPath.visibleModelIDs.length > 0
+    );
+}
+
+const ToolChangeRow = ({
+    previousToolPath, nextToolPath, isRotate, disabled, onChangeOffset
+}) => {
+    const fromName = toolDefinitionLabel(previousToolPath.toolParams) || previousToolPath.name;
+    const toName = toolDefinitionLabel(nextToolPath.toolParams) || nextToolPath.name;
+    const offset = resolveToolChangeZOffset(nextToolPath.toolParams);
+
+    return (
+        <div
+            className={classNames(styles['tool-change-row'], 'sm-flex', 'justify-space-between', 'align-center')}
+            onClick={(event) => event.stopPropagation()}
+            onMouseUp={(event) => event.stopPropagation()}
+            role="presentation"
+        >
+            <div className={classNames(styles['tool-change-copy'], 'sm-flex-width')}>
+                <div className={styles['tool-change-title']}>
+                    {i18n._('key-CncLaser/ToolPathList/ToolChange-Title')}
+                </div>
+                <div className={styles['tool-change-tools']} title={`${fromName} → ${toName}`}>
+                    {`${fromName} → ${toName}`}
+                </div>
+                {isRotate && (
+                    <div className={styles['tool-change-warning']}>
+                        {i18n._('key-CncLaser/ToolPathList/ToolChange-Unavailable Rotary')}
+                    </div>
+                )}
+            </div>
+            <TipTrigger
+                title={i18n._('key-CncLaser/ToolPathList/ToolChange-Z Offset (mm)')}
+                content={i18n._('key-CncLaser/ToolPathList/ToolChange-Offset Tooltip')}
+                placement="left"
+            >
+                <div className={classNames('sm-flex', 'align-center', styles['tool-change-offset'])}>
+                    <span className={styles['tool-change-offset-label']}>
+                        {i18n._('key-CncLaser/ToolPathList/ToolChange-Z Offset (mm)')}
+                    </span>
+                    <InputNumber
+                        size="small"
+                        step={0.1}
+                        value={offset}
+                        disabled={disabled || isRotate}
+                        controls={false}
+                        onChange={(value) => {
+                            if (value === null || value === undefined || Number.isNaN(Number(value))) {
+                                onChangeOffset(nextToolPath.id, 0);
+                                return;
+                            }
+                            onChangeOffset(nextToolPath.id, Number(value));
+                        }}
+                    />
+                </div>
+            </TipTrigger>
+        </div>
+    );
+};
+ToolChangeRow.propTypes = {
+    previousToolPath: PropTypes.object.isRequired,
+    nextToolPath: PropTypes.object.isRequired,
+    isRotate: PropTypes.bool.isRequired,
+    disabled: PropTypes.bool.isRequired,
+    onChangeOffset: PropTypes.func.isRequired
+};
+
 const ToolpathItem = ({
     toolPath, selectedToolPathIDArray, selectToolPathId, selectOneToolPathId, selectToolPathById,
-    onClickVisible, setEditingToolpath, disabled, showContextMenu, onSetPreviewColor
+    onClickVisible, setEditingToolpath, disabled, showContextMenu, onSetPreviewColor, showToolName
 }) => {
     if (!toolPath) {
         return null;
@@ -141,12 +227,19 @@ const ToolpathItem = ({
     }
     const suffixLength = 6;
     const { prefixName, suffixName } = normalizeNameDisplay(toolPath.name, suffixLength);
+    const toolName = showToolName ? toolDefinitionLabel(toolPath.toolParams) : '';
+    const tipContent = toolName ? (
+        <div>
+            <div>{toolPath.name}</div>
+            <div>{toolName}</div>
+        </div>
+    ) : toolPath.name;
 
     return (
         <TipTrigger
             key={toolPath.id}
             title={i18n._('key-CncLaser/ToolPathList/Button/-Object')}
-            content={toolPath.name}
+            content={tipContent}
         >
             <div
                 className={classNames(
@@ -170,7 +263,7 @@ const ToolpathItem = ({
             >
                 <Anchor
                     className={classNames(
-                        'height-24',
+                        toolName ? styles['toolpath-main'] : 'height-24',
                         'width-254',
                         'align-l',
                         'sm-flex',
@@ -188,11 +281,18 @@ const ToolpathItem = ({
                             onChange={(color) => onSetPreviewColor(toolPath.id, color)}
                         />
                     )}
-                    <span className={classNames(styles['prefix-name'])}>
-                        {prefixName}
-                    </span>
-                    <span className={classNames(styles['suffix-name'])}>
-                        {suffixName}
+                    <span className={classNames(styles['toolpath-labels'], 'sm-flex-width')}>
+                        <span className={classNames(styles['prefix-name'])}>
+                            {prefixName}
+                        </span>
+                        <span className={classNames(styles['suffix-name'])}>
+                            {suffixName}
+                        </span>
+                        {toolName && (
+                            <span className={styles['tool-name']} title={toolName}>
+                                {toolName}
+                            </span>
+                        )}
                     </span>
                     <ColorSwatchChips colorFilter={toolPath.colorFilter} />
                 </Anchor>
@@ -239,7 +339,8 @@ ToolpathItem.propTypes = {
 
     setEditingToolpath: PropTypes.func.isRequired,
     disabled: PropTypes.bool.isRequired,
-    onSetPreviewColor: PropTypes.func.isRequired
+    onSetPreviewColor: PropTypes.func.isRequired,
+    showToolName: PropTypes.bool
 };
 
 
@@ -251,7 +352,9 @@ const ToolPathListBox = (props) => {
     const inProgress = useSelector(state => state[props.headType]?.inProgress);
     const displayedType = useSelector(state => state[props.headType]?.displayedType);
     const selectedModelArray = useSelector(state => state[props.headType]?.modelGroup?.getSelectedModelArray());
+    const isRotate = useSelector(state => Boolean(state[props.headType]?.materials?.isRotate));
     const dispatch = useDispatch();
+    const isCnc = props.headType === HEAD_CNC;
 
     const selectedColorPalette = props.headType === HEAD_LASER
         && selectedModelArray
@@ -333,6 +436,9 @@ const ToolPathListBox = (props) => {
         },
         setPreviewColor: (id, color) => {
             dispatch(editorActions.setToolPathPreviewColor(props.headType, id, color));
+        },
+        updateToolChangeZOffset: (id, toolChangeZOffset) => {
+            dispatch(editorActions.updateToolChangeZOffset(props.headType, id, toolChangeZOffset));
         }
     };
     useEffect(() => {
@@ -394,23 +500,50 @@ const ToolPathListBox = (props) => {
                     )}
 
                     <div className={styles['object-list-box']}>
-                        {toolPaths && toolPaths.map((toolPath) => {
-                            return (
-                                <ToolpathItem
-                                    toolPath={toolPath}
-                                    key={toolPath.id}
-                                    selectedToolPathIDArray={selectedToolPathIDArray}
-                                    selectOneToolPathId={actions.selectOneToolPathId}
-                                    selectToolPathId={actions.selectToolPathId}
-                                    selectToolPathById={actions.selectToolPathById}
-                                    onClickVisible={actions.onClickVisible}
-                                    setEditingToolpath={setEditingToolpath}
-                                    showContextMenu={actions.showContextMenu}
-                                    onSetPreviewColor={actions.setPreviewColor}
-                                    disabled={isOnABPosition || inProgress}
-                                />
-                            );
-                        })}
+                        {toolPaths && (() => {
+                            let previousVisible = null;
+                            return toolPaths.map((toolPath) => {
+                                const rows = [];
+                                const counts = countsForToolChange(toolPath);
+                                if (
+                                    isCnc
+                                    && counts
+                                    && previousVisible
+                                    && cncToolsDiffer(previousVisible.toolParams, toolPath.toolParams)
+                                ) {
+                                    rows.push(
+                                        <ToolChangeRow
+                                            key={`tool-change-${previousVisible.id}-${toolPath.id}`}
+                                            previousToolPath={previousVisible}
+                                            nextToolPath={toolPath}
+                                            isRotate={isRotate}
+                                            disabled={isOnABPosition || inProgress}
+                                            onChangeOffset={actions.updateToolChangeZOffset}
+                                        />
+                                    );
+                                }
+                                if (counts) {
+                                    previousVisible = toolPath;
+                                }
+                                rows.push(
+                                    <ToolpathItem
+                                        toolPath={toolPath}
+                                        key={toolPath.id}
+                                        selectedToolPathIDArray={selectedToolPathIDArray}
+                                        selectOneToolPathId={actions.selectOneToolPathId}
+                                        selectToolPathId={actions.selectToolPathId}
+                                        selectToolPathById={actions.selectToolPathById}
+                                        onClickVisible={actions.onClickVisible}
+                                        setEditingToolpath={setEditingToolpath}
+                                        showContextMenu={actions.showContextMenu}
+                                        onSetPreviewColor={actions.setPreviewColor}
+                                        disabled={isOnABPosition || inProgress}
+                                        showToolName={isCnc}
+                                    />
+                                );
+                                return rows;
+                            });
+                        })()}
                     </div>
                 </div>
                 <div className={classNames(

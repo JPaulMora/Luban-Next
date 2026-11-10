@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid';
 import { Box3, Vector3 } from 'three';
 
 import { timestamp } from '../../../shared/lib/random-utils';
+import { buildCncToolChangeLines } from '../../../shared/lib/cncToolChange';
 import api from '../../api';
 import { DISPLAYED_TYPE_MODEL, DISPLAYED_TYPE_TOOLPATH, HEAD_CNC, HEAD_LASER, MotorPowerMode, SELECTEVENT, SetupCoordinateMethod } from '../../constants';
 import { JobOffsetMode, Origin, OriginType } from '../../constants/coordinate';
@@ -415,6 +416,26 @@ export const processActions = {
         );
     },
 
+    /**
+     * CNC tool-change Z offset only. Marks G-code stale; leave the mesh and
+     * solid simulation alone because the cut geometry did not change.
+     */
+    updateToolChangeZOffset: (headType, toolPathId, toolChangeZOffset) => (dispatch, getState) => {
+        if (headType !== HEAD_CNC) {
+            return;
+        }
+        const { toolPathGroup } = getState()[headType];
+        if (!toolPathGroup.updateToolChangeZOffset(toolPathId, toolChangeZOffset)) {
+            return;
+        }
+        dispatch(
+            baseActions.updateState(headType, {
+                isChangedAfterGcodeGenerating: true
+            })
+        );
+        dispatch(projectActions.autoSaveEnvironment(headType));
+    },
+
     toolPathToUp: (headType, toolPathId) => (dispatch, getState) => {
         const { toolPathGroup } = getState()[headType];
         toolPathGroup.toolPathToUp(toolPathId);
@@ -541,6 +562,17 @@ export const processActions = {
             const toolPaths = toolPathGroup.getCommitGenerateGcodeInfos();
             if (!toolPaths || toolPaths.length === 0) {
                 return;
+            }
+
+            if (headType === HEAD_CNC) {
+                try {
+                    for (let i = 1; i < toolPaths.length; i++) {
+                        buildCncToolChangeLines(toolPaths[i - 1], toolPaths[i]);
+                    }
+                } catch (err) {
+                    toast(makeSceneToast('warning', err.message || String(err)));
+                    return;
+                }
             }
 
             toolPaths[0].thumbnail = toolPathGroup.thumbnail;

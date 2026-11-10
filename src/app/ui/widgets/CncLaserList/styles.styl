@@ -7,6 +7,57 @@
     //padding-top: 4px;
 }
 
+.tool-change-row {
+    margin: 4px 8px;
+    padding: 6px 8px;
+    border: 1px dashed #B9BCBF;
+    border-radius: 4px;
+    background: #F7F8F9;
+    gap: 8px;
+}
+
+.tool-change-copy {
+    min-width: 0;
+}
+
+.tool-change-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2A2C2E;
+    line-height: 16px;
+}
+
+.tool-change-tools {
+    font-size: 11px;
+    color: #85888C;
+    line-height: 14px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.tool-change-warning {
+    font-size: 11px;
+    color: #D94F00;
+    line-height: 14px;
+    margin-top: 2px;
+}
+
+.tool-change-offset {
+    flex-shrink: 0;
+    gap: 4px;
+}
+
+.tool-change-offset-label {
+    font-size: 11px;
+    color: #575859;
+    white-space: nowrap;
+}
+
+.tool-change-offset :global(.ant-input-number) {
+    width: 64px;
+}
+
 .object-list-item {
     padding: 4px 0;
 
@@ -22,6 +73,17 @@
         padding: 0 12px;
     }
 
+    .toolpath-main {
+        min-height: 24px;
+    }
+
+    .toolpath-labels {
+        min-width: 0;
+        display: inline-block;
+        vertical-align: middle;
+        line-height: 14px;
+    }
+
     .prefix-name {
         display: inline-block
         vertical-align: middle
@@ -34,6 +96,16 @@
     .suffix-name {
         display: inline-block
         vertical-align: middle
+    }
+
+    .tool-name {
+        display: block;
+        font-size: 11px;
+        color: #85888C;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        max-width: 180px;
     }
 
     .icon {

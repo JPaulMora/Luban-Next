@@ -4,6 +4,7 @@ import path from 'path';
 
 import { pathWithRandomSuffix } from '../../../../shared/lib/random-utils';
 import { isNull } from '../../../../shared/lib/utils';
+import { buildCncToolChangeLines } from '../../../../shared/lib/cncToolChange';
 import { GcodeGenerator } from '../../../lib/GcodeGenerator';
 import logger from '../../../lib/logger';
 import sendMessage from '../utils/sendMessage';
@@ -136,6 +137,21 @@ const generateGcode = ({ toolPaths, size, toolHead, origin, jobOffsetMode, serie
             const renderMethod = gcodeConfig.movementMode === 'greyscale-dot' ? 'point' : 'line';
             const maxPowerNumber = metadata?.gcodeFlavor === 'grbl' ? 1000 : 255;
             const maxPower = (gcodeConfig.fixedPowerEnabled ? gcodeConfig.fixedPower : 100) / 100 * maxPowerNumber;
+
+            if (headType === 'cnc' && i > 0 && j === 0) {
+                let toolChangeLines;
+                try {
+                    toolChangeLines = buildCncToolChangeLines(toolPaths[i - 1], toolPath);
+                } catch (err) {
+                    writeStream.end();
+                    return sendMessage({ status: 'fail', value: err.message || String(err) });
+                }
+                if (toolChangeLines.length > 0) {
+                    const toolChangeBlock = `\n\n${toolChangeLines.join('\n')}\n`;
+                    writeStream.write(toolChangeBlock);
+                    fileTotalLines += toolChangeLines.length + 2;
+                }
+            }
 
             if (i > 0 || j > 0) {
                 const header = '\n\n'
