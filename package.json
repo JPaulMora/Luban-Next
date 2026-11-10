@@ -76,7 +76,7 @@
     "Marlin"
   ],
   "dependencies": {
-    "@babel/runtime": "7.20.6",
+    "@babel/runtime": "7.29.13",
     "@electron/remote": "2.0.8",
     "@react-three/fiber": "5.3.15",
     "@sentry/electron": "^5.6.0",
@@ -241,7 +241,7 @@
   },
   "devDependencies": {
     "@babel/cli": "7.19.3",
-    "@babel/core": "7.20.5",
+    "@babel/core": "7.29.13",
     "@babel/eslint-parser": "7.16.0",
     "@babel/plugin-proposal-decorators": "~7.20.0",
     "@babel/plugin-proposal-do-expressions": "~7.18.0",
