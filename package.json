@@ -113,7 +113,7 @@
     "color-convert": "2.0.1",
     "colornames": "1.1.1",
     "commander": "7.2.0",
-    "compression": "1.7.4",
+    "compression": "1.8.2",
     "connect-multiparty": "2.2.0",
     "connect-restreamer": "1.0.3",
     "consolidate": "0.15.1",
