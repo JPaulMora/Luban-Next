@@ -262,7 +262,7 @@ const createApplication = () => {
         return {
             webroot: webroot,
             lang: lng,
-            title: `Snapmaker Luban ${settings.version}`,
+            title: `Luban Next ${settings.version}`,
             loading: t('loading')
         };
     }));

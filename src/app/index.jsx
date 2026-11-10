@@ -78,7 +78,7 @@ series([
             });
     },
 ], () => {
-    log.info(`Launching Snapmaker Luban v${settings.version}...`);
+    log.info(`Launching Luban Next v${settings.version}...`);
 
     // Prevent browser from loading a drag-and-dropped file
     // http://stackoverflow.com/questions/6756583/prevent-browser-from-loading-a-drag-and-dropped-file

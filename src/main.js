@@ -21,6 +21,10 @@ import MenuBuilder, { addRecentFile, cleanAllRecentFiles } from './electron-app/
 import { configureWindow } from './electron-app/window';
 import pkg from './package.json';
 
+const APP_NAME = 'Luban Next';
+
+app.setName(APP_NAME);
+
 Sentry.init({
     dsn: 'https://cd2af28a126afbc7a8257a75b3b5d0ab@o4508125599563776.ingest.us.sentry.io/4508125605068800',
     release: pkg.version,
@@ -177,7 +181,7 @@ function getBrowserWindowOptions() {
         minWidth: 1024,
         show: false,
         useContentSize: true,
-        title: `${pkg.name} ${pkg.version}`,
+        title: `${APP_NAME} ${pkg.version}`,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -496,7 +500,7 @@ const showMainWindow = async () => {
         }
         // window.webContents.openDevTools();
         window.loadURL(path.resolve(__dirname, 'app', 'loading.html'))
-            .then(() => window.setTitle(`Snapmaker Luban ${pkg.version}`))
+            .then(() => window.setTitle(`${APP_NAME} ${pkg.version}`))
             .catch(err => {
                 console.log('err', err.message);
             });

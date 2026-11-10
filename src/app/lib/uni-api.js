@@ -109,10 +109,10 @@ const Update = {
                 checkboxLabel: i18n._('key-App/Update-Automatically check for updates'),
                 checkboxChecked: shouldCheckForUpdate,
                 title: i18n._('key-App/Update-Update Snapmaker Luban'),
-                message: `Snapmaker Luban ${releaseName} ${i18n._('key-App/Update-Update')}. ${i18n._('key-App/Update-Current version')} : ${oldVersion}`,
+                message: `Luban Next ${releaseName} ${i18n._('key-App/Update-Update')}. ${i18n._('key-App/Update-Current version')} : ${oldVersion}`,
                 textWidth: 600,
                 // detail: i18n._(`key-App/${span.innerText}`)
-                detail: `${releaseNotes}\nLearn more about release notes please checkout [https://github.com/Snapmaker/Luban/releases]`
+                detail: `${releaseNotes}\nLearn more about release notes please checkout [https://github.com/JPaulMora/Luban-Next/releases]`
             };
             dialog.showMessageBox(remote.getCurrentWindow(), dialogOpts).then((returnValue) => {
                 if (returnValue.response === 1) {
@@ -147,7 +147,7 @@ const Update = {
                 type: 'info',
                 buttons: [i18n._('key-App/Update-Later'), i18n._('key-App/Update-Install Now')],
                 defaultId: 1,
-                title: i18n._(`Luban ${releaseName} has been downloaded.`),
+                title: i18n._(`Luban Next ${releaseName} has been downloaded.`),
                 detail: i18n._('key-App/Update-A new version has been downloaded. Install now?')
             };
 
@@ -382,7 +382,7 @@ const Window = {
         if (isElectron()) {
             const { getCurrentWindow } = window.require('@electron/remote');
             this.window = getCurrentWindow();
-            this.initTitle = `Snapmaker Luban ${pkg.version}`;
+            this.initTitle = `Luban Next ${pkg.version}`;
         } else {
             this.window = {
                 setTitle(title) {

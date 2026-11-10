@@ -28,7 +28,7 @@ import SubMenuitemWrapper from './SubMenuItemWrapper';
 //             />
 //             <div className={styles['product-details']}>
 //                 <div className={styles['about-product-name']}>
-//                     {`Snapmaker Luban ${settings.version}`}
+//                     {`Luban Next ${settings.version}`}
 //                 </div>
 //                 <div className={styles['about-product-description']}>
 //                     {i18n._('key-App/Settings/General-A web-based interface which is able to do 3D printing, laser engraving and CNC carving.')}

@@ -33,7 +33,7 @@ const Dialog = {
             const openDialogReturnValue = await remote.dialog.showOpenDialog(
                 currentWindow,
                 {
-                    title: 'Snapmaker Luban',
+                    title: 'Luban Next',
                     filters: [{ name: 'files', extensions }],
                     properties: isMultiSelect ? defaultProperties.concat('multiSelections') : defaultProperties
                 }
@@ -56,7 +56,7 @@ const Dialog = {
         if (isElectron()) {
             const remote = window.require('@electron/remote');
             const { dialog } = remote;
-            options.title = 'Snapmaker Luban';
+            options.title = 'Luban Next';
             if (modal) {
                 const currentWindow = remote.getCurrentWindow();
                 return dialog.showMessageBox(currentWindow, options);
@@ -70,7 +70,7 @@ const Dialog = {
         if (isElectron()) {
             const remote = window.require('@electron/remote');
             const { dialog } = remote;
-            options.title = 'Snapmaker Luban';
+            options.title = 'Luban Next';
             if (modal) {
                 const currentWindow = remote.getCurrentWindow();
                 return dialog.showSaveDialog(currentWindow, options);

@@ -48,7 +48,7 @@ function SoftwareUpdate() {
                 <div className={styles['lu-version']}>
                     <div className={styles['product-details']}>
                         <div className={classNames(styles['about-product-name'], 'heading - 3')}>
-                            {`Snapmaker Luban ${settings.version}`}
+                            {`Luban Next ${settings.version}`}
                         </div>
                         <div className={classNames(styles['about-product-description'], 'color-black-4')}>
                             {i18n._('key-App/Settings/SoftwareUpdate-An open-source slicing software which can 3D print, laser engrave, and CNC carve.')}

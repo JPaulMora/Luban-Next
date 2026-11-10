@@ -25,7 +25,7 @@ function getMenuItems() {
         if (process.platform === 'darwin') {
             // About
             menuItems.unshift({
-                label: app.getName(), // 'Snapmaker Luban'
+                label: app.getName(), // 'Luban Next'
                 submenu: [
                     { role: 'about', label: 'key_menu_About' },
                     { type: 'separator' },

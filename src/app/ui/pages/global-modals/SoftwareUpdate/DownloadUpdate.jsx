@@ -23,7 +23,7 @@ function DownloadUpdate({ releaseNotes, releaseChangeLog, prevVersion, version }
                 <div className={styles['lu-version']}>
                     <div className={styles['product-details']}>
                         <div className={classNames(styles['about-product-name'], 'heading - 3')}>
-                            {`Snapmaker Luban ${version} ${i18n._('key-App/Update-Update')}. ${i18n._('key-App/Update-Current version')} : ${prevVersion}`}
+                            {`Luban Next ${version} ${i18n._('key-App/Update-Update')}. ${i18n._('key-App/Update-Current version')} : ${prevVersion}`}
                         </div>
                         <div
                             className={classNames(styles['about-product-description'], 'color-black-4')}
@@ -40,12 +40,12 @@ function DownloadUpdate({ releaseNotes, releaseChangeLog, prevVersion, version }
                         <div className="color-black-3">
                             {i18n._('key-App/Learn more about release notes please checkout')}
                             <a
-                                href="https://github.com/Snapmaker/Luban/releases"
+                                href="https://github.com/JPaulMora/Luban-Next/releases"
                                 target="_blank"
                                 className="link-text margin-left-4"
                                 rel="noreferrer"
                             >
-                                https://github.com/Snapmaker/Luban/releases
+                                https://github.com/JPaulMora/Luban-Next/releases
                             </a>
                         </div>
                     </div>

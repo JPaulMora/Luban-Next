@@ -437,7 +437,7 @@ i18n._('key-App/Settings/MachineSettings-High CNC');
 i18n._('key-App/Settings/MachineSettings-Snapmaker 2.0 Quick Swap Kit');
 i18n._('key-App/Settings/MachineSettings-Snapmaker 2.0 Bracing Kit');
 
-i18n._('key-settings_message-update_not_ava'); // Snapmaker Luban is up to date.
+i18n._('key-settings_message-update_not_ava'); // Luban Next is up to date.
 i18n._('key-settings_message-updateAva'); // Updates are available.
 i18n._('key-settings_message-checking'); // Checking for updates.
 i18n._('key-settings_message-error'); // An error occurred while checking for updates.
