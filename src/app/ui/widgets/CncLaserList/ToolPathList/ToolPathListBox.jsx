@@ -33,6 +33,23 @@ import {
     cncToolsDiffer,
     resolveToolChangeZOffset,
 } from '../../../../../shared/lib/cncToolChange';
+import useListResize from '../useListResize';
+
+// Height of the tool path list, shared by laser and CNC and kept in editor.json.
+const LIST_SIZE_STORE_KEY = 'toolPathListSize';
+const DEFAULT_LIST_SIZE = { height: 176 };
+const MIN_LIST_HEIGHT = 96;
+// Vertical padding of the list card (padding-vertical-4).
+const LIST_PADDING = 8;
+
+const clampListSize = (size) => {
+    const maxHeight = Math.max(MIN_LIST_HEIGHT, Math.round(window.innerHeight * 0.6));
+    const height = Number(size?.height) || DEFAULT_LIST_SIZE.height;
+    return { height: Math.round(Math.min(Math.max(height, MIN_LIST_HEIGHT), maxHeight)) };
+};
+
+// The list sits above its buttons, so it grows down.
+const growDown = (size, dx, dy) => ({ height: size.height + dy });
 
 
 function PreviewColorSwatch({ color, onChange }) {
@@ -367,6 +384,9 @@ const ToolPathListBox = (props) => {
     const [editingToolpath, setEditingToolpath] = useState(null);
     const contextMenuRef = useRef(null);
     const contextMenuArrangementDisabled = (toolPaths.length === 1);
+    const {
+        size: listSize, onResizeStart, onResizeMove, onResizeEnd, onResizeReset
+    } = useListResize(LIST_SIZE_STORE_KEY, DEFAULT_LIST_SIZE, clampListSize);
     const actions = {
         selectOneToolPathId: (id) => {
             dispatch(editorActions.selectOneToolPathId(props.headType, id));
@@ -462,11 +482,11 @@ const ToolPathListBox = (props) => {
             >
                 <div
                     className={classNames(
-                        'height-184',
                         'position-re',
                         // // 'align-c',
                         'padding-vertical-4'
                     )}
+                    style={{ height: listSize.height + LIST_PADDING }}
                     tabIndex="-1"
                     role="button"
                     onKeyDown={() => { }}
@@ -499,7 +519,10 @@ const ToolPathListBox = (props) => {
                         </div>
                     )}
 
-                    <div className={styles['object-list-box']}>
+                    <div
+                        className={styles['object-list-box']}
+                        style={{ maxHeight: listSize.height }}
+                    >
                         {toolPaths && (() => {
                             let previousVisible = null;
                             return toolPaths.map((toolPath) => {
@@ -546,6 +569,16 @@ const ToolPathListBox = (props) => {
                         })()}
                     </div>
                 </div>
+                {/* Outside the list card, so the click that ends a drag does not clear the selection. */}
+                <div
+                    className={styles['tool-path-list-resize-bottom']}
+                    title={i18n._('key-CncLaser/ObjectList-Drag to resize. Double-click to reset.')}
+                    onPointerDown={(event) => onResizeStart(event, growDown)}
+                    onPointerMove={onResizeMove}
+                    onPointerUp={onResizeEnd}
+                    onPointerCancel={onResizeEnd}
+                    onDoubleClick={onResizeReset}
+                />
                 <div className={classNames(
                     'border-radius-bottom-8',
                     'padding-horizontal-16',

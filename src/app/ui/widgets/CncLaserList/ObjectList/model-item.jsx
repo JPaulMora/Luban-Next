@@ -37,7 +37,7 @@ function ModelItem(
         inProgress, placement, disabled = false,
     }
 ) {
-    const [tipTriggerVisible, setTipVisible] = useState('');
+    const [tipVisible, setTipVisible] = useState(false);
 
     if (!model) {
         return null;
@@ -66,7 +66,7 @@ function ModelItem(
                 title={i18n._('key-PrintingCncLaser/ObjectList-Object')}
                 content={model.modelName}
                 placement={placement || undefined}
-                visible={!hasChildren && model.modelID === tipTriggerVisible && tipTriggerVisible}
+                visible={!hasChildren && tipVisible}
             >
                 <div
                     className={classNames(
