@@ -228,7 +228,7 @@ export const actions = {
         for (let k = 0; k < models.length; k++) {
             const { headType, originalName, uploadName, modelName, config, sourceType, gcodeConfig,
                 sourceWidth, sourceHeight, mode, transformation, modelID, supportTag, extruderConfig, children, parentModelID, processImageName,
-                visible } = models[k];
+                visible, locked } = models[k];
             const primeTowerTag = uploadName && uploadName.indexOf('prime_tower_') === 0;
             // prevent project recovery recorded into operation history
             if (supportTag) {
@@ -259,6 +259,7 @@ export const actions = {
                     children,
                     processImageName,
                     visible,
+                    locked,
                     primeTowerTag,
                     isGuideTours
                 }))

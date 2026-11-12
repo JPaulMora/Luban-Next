@@ -132,6 +132,7 @@ interface VisualizerProps {
         moveElementsOnKeyDown: (elements, options) => void;
         isPointInSelectArea: (elements, options) => void;
         getMouseTargetByCoordinate: (elements, options) => void;
+        getMouseTargetsByCoordinate: (x: number, y: number) => SVGElement[];
         isSelectedAllVisible: (elements, options) => void;
     };
 
@@ -232,6 +233,7 @@ class Visualizer extends React.Component<VisualizerProps> {
             moveElementsOnKeyDown: PropTypes.func.isRequired,
             isPointInSelectArea: PropTypes.func.isRequired,
             getMouseTargetByCoordinate: PropTypes.func.isRequired,
+            getMouseTargetsByCoordinate: PropTypes.func.isRequired,
             isSelectedAllVisible: PropTypes.func.isRequired
         })
     };
@@ -942,6 +944,7 @@ const mapDispatchToProps = (dispatch) => {
             rotateElementsImmediately: (elements, options) => dispatch(editorActions.rotateElementsImmediately('cnc', elements, options)),
             isPointInSelectArea: (x, y) => dispatch(editorActions.isPointInSelectArea('cnc', x, y)),
             getMouseTargetByCoordinate: (x, y) => dispatch(editorActions.getMouseTargetByCoordinate('cnc', x, y)),
+            getMouseTargetsByCoordinate: (x, y) => dispatch(editorActions.getMouseTargetsByCoordinate('cnc', x, y)),
             isSelectedAllVisible: () => dispatch(editorActions.isSelectedAllVisible('cnc'))
         }
         // onModelTransform: () => dispatch(editorActions.onModelTransform('cnc')),

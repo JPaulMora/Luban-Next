@@ -43,6 +43,7 @@ import {
 import CompoundOperation from '../../core/CompoundOperation';
 import OperationHistory from '../../core/OperationHistory';
 import log from '../../lib/log';
+import { moveToInsertPosition } from '../../lib/object-order';
 import ProgressStatesManager, { PROCESS_STAGE, STEP_STAGE } from '../../lib/manager/ProgressManager';
 import workerManager from '../../lib/manager/workerManager';
 import ModelGroup from '../../models/ModelGroup';
@@ -63,6 +64,7 @@ import DrawStart from '../operation-history/DrawStart';
 import DrawTransform from '../operation-history/DrawTransform';
 import DrawTransformComplete from '../operation-history/DrawTransformComplete';
 import MoveOperation2D from '../operation-history/MoveOperation2D';
+import ReorderOperation2D from '../operation-history/ReorderOperation2D';
 import RotateOperation2D from '../operation-history/RotateOperation2D';
 import ScaleOperation2D from '../operation-history/ScaleOperation2D';
 import VisibleOperation2D from '../operation-history/VisibleOperation2D';
@@ -960,7 +962,7 @@ export const actions = {
         headType,
         {
             originalName, uploadName, sourceWidth, sourceHeight, mode, sourceType,
-            config, gcodeConfig, transformation, modelID, zIndex, isLimit, loadFrom, processImageName, visible
+            config, gcodeConfig, transformation, modelID, zIndex, isLimit, loadFrom, processImageName, visible, locked
         }
     ) => async (dispatch, getState) => {
         const { size, promptDamageModel } = getState().machine;
@@ -1118,6 +1120,9 @@ export const actions = {
             modelGroup.hideSelectedModel([model]);
             SVGActions.hideSelectedElement();
         }
+        if (locked) {
+            modelGroup.setModelLocked([model], true);
+        }
 
         if (path.extname(uploadName).toLowerCase() === '.stl') {
             dispatch(actions.prepareStlVisualizer(headType, model));
@@ -1189,28 +1194,36 @@ export const actions = {
         }));
     },
 
-    getMouseTargetByCoordinate: (headType, x, y) => (dispatch, getState) => {
+    getMouseTargetByCoordinate: (headType, x, y) => (dispatch) => {
+        const targets = dispatch(actions.getMouseTargetsByCoordinate(headType, x, y));
+        return targets.length > 0 ? targets[0] : null;
+    },
+
+    /**
+     * SVG elements of the models under (x, y), from the top of the stack down.
+     */
+    getMouseTargetsByCoordinate: (headType, x, y) => (dispatch, getState) => {
         const { modelGroup } = getState()[headType];
         const models = modelGroup.models;
         if (models.length > 0) {
             const svgDateElem = models[0].elem?.parentElement;
             const svgDateElemChilds = svgDateElem?.children ? Array.from(svgDateElem?.children) : [];
             if (svgDateElem && svgDateElemChilds) {
-                const arr = models
+                // A click goes through a locked model to the one below it.
+                return models
                     .filter(model => {
-                        return model.visible;
+                        return model.visible && !model.locked;
                     })
                     .sort((a, b) => {
                         return svgDateElemChilds.findIndex(elem => elem === b.elem) - svgDateElemChilds.findIndex(elem => elem === a.elem);
-                    });
-                const index = arr.findIndex(model => {
-                    return isInside([x, y], model.vertexPoints);
-                });
-                return index === -1 ? null : arr[index]?.elem;
+                    })
+                    .filter(model => {
+                        return isInside([x, y], model.vertexPoints);
+                    })
+                    .map(model => model.elem);
             }
-            return null;
         }
-        return null;
+        return [];
     },
 
     // TODO: method docs
@@ -1244,6 +1257,16 @@ export const actions = {
         dispatch(baseActions.render(headType));
         // todo, donot reset here
         // SVGActions.resetSelection();
+    },
+
+    // Select exactly these models, as Shift+click in the object list does.
+    selectModels: (headType: HeadType, models) => (dispatch, getState) => {
+        const SVGActions: SVGActionsFactory = getState()[headType].SVGActions;
+        const workpiece: Workpiece = getState()[headType].workpiece;
+
+        dispatch(actions.clearSelection(headType));
+        SVGActions.addSelectedSvgModelsByModels(models, workpiece.shape === WorkpieceShape.Cylinder);
+        dispatch(baseActions.render(headType));
     },
 
     changeSelectedModelMode: (headType, sourceType, mode) => async (dispatch, getState) => {
@@ -1791,6 +1814,48 @@ export const actions = {
             dispatch(actions.resetProcessState(headType));
             dispatch(baseActions.render(headType));
         }
+    },
+
+    // Lock or unlock a model from the object list. Locking also drops the
+    // selection if it holds the model, so the canvas cannot move it by accident.
+    setModelLocked: (headType: HeadType, model, locked: boolean) => (dispatch, getState) => {
+        const { modelGroup } = getState()[headType];
+
+        modelGroup.setModelLocked([model], locked);
+        if (locked && modelGroup.getSelectedModelArray().includes(model)) {
+            dispatch(actions.clearSelection(headType));
+        }
+        dispatch(projectActions.autoSaveEnvironment(headType));
+        dispatch(baseActions.render(headType));
+    },
+
+    // Drag in the object list: move a model before the one now at insertBefore
+    // (models.length for the end). The list order is the laser order inside a
+    // tool path and the stack on the canvas, first at the bottom, so the G-code
+    // has to be generated again.
+    moveModelInList: (headType: HeadType, model, insertBefore: number) => (dispatch, getState) => {
+        const { modelGroup, SVGActions } = getState()[headType];
+        const models: SvgModel[] = modelGroup.models;
+        const order = moveToInsertPosition(models, models.indexOf(model), insertBefore);
+        if (order === models) {
+            return;
+        }
+        const operation = new ReorderOperation2D({
+            modelGroup,
+            svgActions: SVGActions,
+            from: models,
+            to: order
+        });
+        operation.redo();
+        const operations = new CompoundOperation();
+        operations.push(operation);
+        // Adding to the history also autosaves the project.
+        dispatch(operationHistoryActions.setOperations(headType, operations));
+        dispatch(actions.resetProcessState(headType));
+        dispatch(baseActions.updateState(headType, {
+            isChangedAfterGcodeGenerating: true
+        }));
+        dispatch(baseActions.render(headType));
     },
 
     hideSelectedModel: (headType, model) => (dispatch, getState) => {
@@ -3278,7 +3343,8 @@ export const actions = {
                         width,
                         height,
                         vertexPoints: model.vertexPoints,
-                        visible: model.visible
+                        // The worker skips models that are not visible; box select skips locked ones too.
+                        visible: model.visible && !model.locked
                     };
                 }),
                 onlyContainSelect,
