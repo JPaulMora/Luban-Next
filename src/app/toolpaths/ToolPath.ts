@@ -83,6 +83,8 @@ class ToolPath {
             headType,
             type,
             useLegacyEngine = false,
+            visible = true,
+            check = true,
             modelMode,
             visibleModelIDs,
             modelIDs,
@@ -107,7 +109,13 @@ class ToolPath {
         this.type = type;
         this.status = IDLE;
         this.useLegacyEngine = useLegacyEngine;
-        this.visibleModelIDs = (visibleModelIDs || modelIDs).map((v) => v);
+        // A tool path saved with its eye closed stays off, as updateState sets it.
+        this.visible = visible;
+        this.check = check;
+        this.object.visible = visible;
+        // modelIDs lists every linked model, hidden ones too. visibleModelIDs
+        // leaves hidden models out; files without modelIDs still use it.
+        this.visibleModelIDs = (modelIDs || visibleModelIDs).map((v) => v);
 
         for (const modelID of this.visibleModelIDs) {
             this.modelMap.set(modelID, {
@@ -169,7 +177,9 @@ class ToolPath {
 
         if (ids.length === 0 && this.baseName) {
             const named = models.find((item) => this.uploadNameOf(item) === this.baseName);
-            const linkedUploads = this.visibleModelIDs.map((id) => {
+            // Check every linked model. A hidden model is still linked; it is
+            // only left out of visibleModelIDs.
+            const linkedUploads = [...this.modelMap.keys()].map((id) => {
                 const model = models.find((item) => item.modelID === id);
                 return this.uploadNameOf(model);
             });
@@ -224,6 +234,7 @@ class ToolPath {
             modelMode: this.modelMode,
             // object: this.object,
             visibleModelIDs: this.visibleModelIDs,
+            modelIDs: [...this.modelMap.keys()],
             toolPathFiles: this.visibleModelIDs.map(
                 (v) => this.modelMap.get(v)?.toolPathFile
             ),

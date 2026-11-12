@@ -227,7 +227,8 @@ export const actions = {
     recoverModels: (promiseArray = [], modActions, models, envHeadType, isGuideTours = false) => (dispatch) => {
         for (let k = 0; k < models.length; k++) {
             const { headType, originalName, uploadName, modelName, config, sourceType, gcodeConfig,
-                sourceWidth, sourceHeight, mode, transformation, modelID, supportTag, extruderConfig, children, parentModelID, processImageName } = models[k];
+                sourceWidth, sourceHeight, mode, transformation, modelID, supportTag, extruderConfig, children, parentModelID, processImageName,
+                visible } = models[k];
             const primeTowerTag = uploadName && uploadName.indexOf('prime_tower_') === 0;
             // prevent project recovery recorded into operation history
             if (supportTag) {
@@ -257,6 +258,7 @@ export const actions = {
                     parentModelID,
                     children,
                     processImageName,
+                    visible,
                     primeTowerTag,
                     isGuideTours
                 }))
@@ -302,6 +304,11 @@ export const actions = {
         dispatch(operationHistoryActions.clear(envHeadType));
         if (envHeadType === HEAD_CNC || envHeadType === HEAD_LASER) {
             modActions = editorActions;
+            // Drop the G-code of the project that was open before, so Export
+            // cannot offer it. Processing a model used to reset this as a side
+            // effect, but a project that holds its processed images skips that.
+            dispatch(editorActions.clearGcodeFile(envHeadType));
+            dispatch(editorActions.resetProcessState(envHeadType));
         }
         if (envHeadType === HEAD_PRINTING) {
             modActions = printingActions;

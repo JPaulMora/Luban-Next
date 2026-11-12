@@ -960,7 +960,7 @@ export const actions = {
         headType,
         {
             originalName, uploadName, sourceWidth, sourceHeight, mode, sourceType,
-            config, gcodeConfig, transformation, modelID, zIndex, isLimit, loadFrom, processImageName
+            config, gcodeConfig, transformation, modelID, zIndex, isLimit, loadFrom, processImageName, visible
         }
     ) => async (dispatch, getState) => {
         const { size, promptDamageModel } = getState().machine;
@@ -1111,6 +1111,13 @@ export const actions = {
 
         SVGActions.clearSelection();
         SVGActions.addSelectedSvgModelsByModels([model], materials.isRotate);
+
+        // A model saved with its eye closed opens hidden, like the eye in the
+        // object list sets it. Hidden models are left out of the tool paths.
+        if (visible === false) {
+            modelGroup.hideSelectedModel([model]);
+            SVGActions.hideSelectedElement();
+        }
 
         if (path.extname(uploadName).toLowerCase() === '.stl') {
             dispatch(actions.prepareStlVisualizer(headType, model));

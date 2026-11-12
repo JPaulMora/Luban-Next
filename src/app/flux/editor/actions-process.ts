@@ -48,11 +48,13 @@ export const processActions = {
         toolPathGroup.computeReferenceBox();
 
         // start generate toolpath
+        // A tool path whose objects are all hidden returns no task.
         const toolPathTasks = toolPathGroup.toolPaths
             .filter(toolPath => toolPath.visible)
             .map(toolPath => {
                 return toolPathGroup.getGenerateToolPathTask(toolPath.id);
-            });
+            })
+            .filter(task => task);
 
         // TODO: This hardcode is used for backward compatibility of Snapmaker Original, remove this later.
         toolPathTasks.forEach(task => { task.identifier = activeMachine?.identifier; });
@@ -414,6 +416,7 @@ export const processActions = {
                 isChangedAfterGcodeGenerating: true
             })
         );
+        dispatch(projectActions.autoSaveEnvironment(headType));
     },
 
     /**
@@ -466,6 +469,7 @@ export const processActions = {
                 isChangedAfterGcodeGenerating: true
             })
         );
+        dispatch(projectActions.autoSaveEnvironment(headType));
     },
 
     toolPathToBottom: (headType, toolPathId) => (dispatch, getState) => {
@@ -476,6 +480,7 @@ export const processActions = {
                 isChangedAfterGcodeGenerating: true
             })
         );
+        dispatch(projectActions.autoSaveEnvironment(headType));
     },
 
     deleteToolPath: (headType, selectedToolPathIDArray) => (dispatch, getState) => {
