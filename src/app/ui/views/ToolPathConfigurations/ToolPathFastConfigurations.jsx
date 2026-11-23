@@ -21,6 +21,7 @@ import {
     HEAD_LASER
 } from '../../../constants';
 import PresentSelector from './laser/PresentSelector';
+import gerberDepthSuggestion from './gerberDepthSuggestion';
 
 function ifDefinitionModified(activeToolListDefinition, currentToolDefinition) {
     return activeToolListDefinition?.settings && !Object.entries(activeToolListDefinition.settings).every(([key, setting]) => {
@@ -94,6 +95,7 @@ function ToolPathFastConfigurations({ setEditingToolpath, headType, toolpath }) 
     const activeMachine = useSelector(state => state.machine.activeMachine);
     const activeToolListDefinition = useSelector(state => state[headType]?.activeToolListDefinition, shallowEqual);
     const toolDefinitions = useSelector(state => state[headType]?.toolDefinitions, shallowEqual);
+    const modelGroup = useSelector(state => state[headType]?.modelGroup);
 
     const dispatch = useDispatch();
 
@@ -362,6 +364,13 @@ function ToolPathFastConfigurations({ setEditingToolpath, headType, toolpath }) 
         });
     }
     const isModifiedDefinition = actions.checkIfDefinitionModified();
+    const suggestion = headType === HEAD_CNC
+        ? gerberDepthSuggestion(toolPath, modelGroup, currentToolDefinition)
+        : null;
+    const depthSuggestion = suggestion && {
+        ...suggestion,
+        onApply: (depth) => actions.updateGcodeConfig({ targetDepth: depth }),
+    };
 
     return (
         <React.Fragment>
@@ -404,6 +413,7 @@ function ToolPathFastConfigurations({ setEditingToolpath, headType, toolpath }) 
                         updateToolConfig={actions.updateToolConfig}
                         updateGcodeConfig={actions.updateGcodeConfig}
                         toolPath={toolPath}
+                        depthSuggestion={depthSuggestion}
                     />
                     <Anchor
                         className={classNames(

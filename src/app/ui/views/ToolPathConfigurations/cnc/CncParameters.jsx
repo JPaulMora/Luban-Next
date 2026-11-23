@@ -16,6 +16,7 @@ import TipTrigger from '../../../components/TipTrigger';
 import ToolSelector from './ToolSelector';
 import { toHump } from '../../../../../shared/lib/utils';
 import SvgIcon from '../../../components/SvgIcon';
+import gerberDepthSuggestion from '../gerberDepthSuggestion';
 
 class CncParameters extends PureComponent {
     static propTypes = {
@@ -33,7 +34,8 @@ class CncParameters extends PureComponent {
         // size: PropTypes.object.isRequired,
         multipleEngine: PropTypes.bool.isRequired,
         materials: PropTypes.object.isRequired,
-        isModel: PropTypes.bool.isRequired
+        isModel: PropTypes.bool.isRequired,
+        modelGroup: PropTypes.object
     };
 
     state = {
@@ -43,7 +45,12 @@ class CncParameters extends PureComponent {
     };
 
     render() {
-        const { toolPath, materials, multipleEngine, isModel } = this.props;
+        const { toolPath, materials, multipleEngine, isModel, modelGroup, activeToolDefinition } = this.props;
+        const suggestion = gerberDepthSuggestion(toolPath, modelGroup, activeToolDefinition);
+        const depthSuggestion = suggestion && {
+            ...suggestion,
+            onApply: (depth) => this.props.updateGcodeConfig({ targetDepth: depth }),
+        };
 
         const { name, type, gcodeConfig, useLegacyEngine } = toolPath;
 
@@ -308,6 +315,7 @@ class CncParameters extends PureComponent {
                             updateToolConfig={this.props.updateToolConfig}
                             updateGcodeConfig={this.props.updateGcodeConfig}
                             toolPath={this.props.toolPath}
+                            depthSuggestion={depthSuggestion}
                         />
                     </div>
                     <div>
@@ -378,10 +386,11 @@ class CncParameters extends PureComponent {
 
 const mapStateToProps = (state) => {
     const { multipleEngine } = state.machine;
-    const { materials } = state.cnc;
+    const { materials, modelGroup } = state.cnc;
     return {
         multipleEngine,
-        materials
+        materials,
+        modelGroup
     };
 };
 

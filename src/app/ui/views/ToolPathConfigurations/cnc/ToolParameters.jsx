@@ -11,7 +11,7 @@ import Switch from '../../../components/Switch';
 import { toHump, toLine } from '../../../../../shared/lib/utils';
 
 function SettingItem(props) {
-    const { setting, isSVG, settingName, updateToolConfig, updateGcodeConfig, styleSize = 'large' } = props;
+    const { setting, isSVG, settingName, updateToolConfig, updateGcodeConfig, styleSize = 'large', depthSuggestion } = props;
     if (!setting) {
         return null;
     }
@@ -152,6 +152,23 @@ function SettingItem(props) {
                     />
                 )}
             </div>
+            {settingName === 'targetDepth' && depthSuggestion && (
+                <div className="additional-message margin-bottom-8">
+                    <button
+                        type="button"
+                        className="link-text"
+                        style={{ background: 'none', border: 0, padding: 0, font: 'inherit' }}
+                        onClick={() => depthSuggestion.onApply(depthSuggestion.depth)}
+                    >
+                        {`${depthSuggestion.depth.toFixed(1)} mm`}
+                    </button>
+                    {' '}
+                    {i18n._('keeps this {{angle}}° bit under the {{gap}} mm gaps.', {
+                        angle: depthSuggestion.angleText,
+                        gap: depthSuggestion.gapText,
+                    })}
+                </div>
+            )}
         </TipTrigger>
 
     );
@@ -162,12 +179,18 @@ SettingItem.propTypes = {
     updateGcodeConfig: PropTypes.func.isRequired,
     setting: PropTypes.object.isRequired,
     isSVG: PropTypes.bool.isRequired,
-    styleSize: PropTypes.string.isRequired
+    styleSize: PropTypes.string.isRequired,
+    depthSuggestion: PropTypes.shape({
+        depth: PropTypes.number,
+        angleText: PropTypes.string,
+        gapText: PropTypes.string,
+        onApply: PropTypes.func,
+    })
 };
 
 
 function ToolParameters(props) {
-    const { settings, toolPath, updateToolConfig, updateGcodeConfig, styleSize = 'large' } = props;
+    const { settings, toolPath, updateToolConfig, updateGcodeConfig, styleSize = 'large', depthSuggestion } = props;
     const type = toolPath?.type;
     const isSVG = type === TOOLPATH_TYPE_VECTOR;
 
@@ -187,6 +210,7 @@ function ToolParameters(props) {
                                     key={key}
                                     settingName={key}
                                     isSVG={isSVG}
+                                    depthSuggestion={depthSuggestion}
                                 />
                             );
                         }))}
@@ -201,7 +225,13 @@ ToolParameters.propTypes = {
     toolPath: PropTypes.object.isRequired,
     updateToolConfig: PropTypes.func.isRequired,
     updateGcodeConfig: PropTypes.func.isRequired,
-    styleSize: PropTypes.string
+    styleSize: PropTypes.string,
+    depthSuggestion: PropTypes.shape({
+        depth: PropTypes.number,
+        angleText: PropTypes.string,
+        gapText: PropTypes.string,
+        onApply: PropTypes.func,
+    })
 };
 
 export default ToolParameters;
