@@ -1,4 +1,5 @@
 import isElectron from 'is-electron';
+import { GERBER_EXTENSIONS } from '../../shared/lib/gerber/extensions';
 
 /**
  * Dialogs control in electron
@@ -18,7 +19,8 @@ const Dialog = {
                 extensions = ['svg', 'png', 'jpg', 'jpeg', 'bmp', 'dxf', 'stl', '3mf', 'amf'];
                 break;
             case 'cnc':
-                extensions = ['svg', 'png', 'jpg', 'jpeg', 'bmp', 'dxf', 'stl', '3mf', 'amf'];
+                extensions = ['svg', 'png', 'jpg', 'jpeg', 'bmp', 'dxf', 'stl', '3mf', 'amf']
+                    .concat(GERBER_EXTENSIONS.map((ext) => ext.slice(1)));
                 break;
             case 'workspace':
                 extensions = ['gcode', 'nc', 'cnc'];

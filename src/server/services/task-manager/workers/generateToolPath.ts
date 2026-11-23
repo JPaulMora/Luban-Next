@@ -7,9 +7,56 @@ import { SOURCE_TYPE_RASTER, TOOLPATH_TYPE_VECTOR } from '../../../constants';
 import slice from '../../../slicer/call-engine';
 import logger from '../../../lib/logger';
 import { vbitPocketDiameter, vbitReliefTipDiameter } from '../../../lib/cnc/vbitPocketDiameter';
+import {
+    centerlineFromCopper,
+    cuttingDiameter,
+    DEFAULT_ISOLATION_DEPTH,
+    DEFAULT_VBIT,
+    warningText,
+} from '../../../../shared/lib/gerber';
 import sendMessage from '../utils/sendMessage';
 
 const log = logger('worker:generateToolPath');
+
+// The canvas shows the copper. The cut is its outline, offset by the live
+// tool width, in the same coordinate frame.
+const prepareGerberToolpath = (modelInfo) => {
+    const uploadName = modelInfo.uploadName || '';
+    if (!/\.gerber\.svg$/i.test(uploadName)) {
+        return null;
+    }
+    const jsonName = uploadName.replace(/\.gerber\.svg$/i, '.copper.json');
+    const jsonPath = `${process.env.Tmpdir}/${jsonName}`;
+    if (!fs.existsSync(jsonPath)) {
+        return null;
+    }
+    const copper = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+    const depth = Number(modelInfo.gcodeConfig && modelInfo.gcodeConfig.targetDepth) || DEFAULT_ISOLATION_DEPTH;
+    const tool = modelInfo.toolParams || DEFAULT_VBIT;
+    const width = cuttingDiameter({
+        toolDiameter: tool.toolDiameter,
+        toolAngle: tool.toolAngle,
+        toolType: tool.toolType,
+        definitionName: tool.definitionName,
+    }, depth) || cuttingDiameter(DEFAULT_VBIT, depth);
+    const sourceWidth = Number(modelInfo.sourceWidth) || copper.width;
+    const sourceHeight = Number(modelInfo.sourceHeight) || copper.height;
+    const transform = modelInfo.transformation || {};
+    const scaleX = Math.abs(Number(transform.width) / sourceWidth) || 1;
+    const scaleY = Math.abs(Number(transform.height) / sourceHeight) || 1;
+    const scale = Math.min(scaleX, scaleY) || 1;
+    const built = centerlineFromCopper(copper, width / scale);
+    const outName = uploadName.replace(/\.gerber\.svg$/i, '.centerline.svg');
+    fs.writeFileSync(`${process.env.Tmpdir}/${outName}`, built.svg);
+    modelInfo.uploadName = outName;
+    if (modelInfo.gcodeConfig) {
+        modelInfo.gcodeConfig.pathType = 'path';
+    }
+    if (!built.narrow) {
+        return null;
+    }
+    return warningText(width, depth);
+};
 
 const applyColorFilter = async (modelInfo, taskId) => {
     const colorFilter = modelInfo.colorFilter;
@@ -52,7 +99,12 @@ const generateLaserToolPathFromEngine = async (allTasks, onProgress) => {
             return Promise.reject(new Error('modelInfo is empty.'));
         }
         const { taskId } = task;
+        const warnings = [];
         for (const modelInfo of modelInfos) {
+            const warning = prepareGerberToolpath(modelInfo);
+            if (warning && warnings.indexOf(warning) === -1) {
+                warnings.push(warning);
+            }
             const { headType, type, sourceType } = modelInfo;
             if ([TOOLPATH_TYPE_VECTOR + SOURCE_TYPE_RASTER].includes(type + sourceType)) {
                 modelInfo.uploadName = modelInfo.processImageName;
@@ -76,11 +128,11 @@ const generateLaserToolPathFromEngine = async (allTasks, onProgress) => {
                 gcodeConfig.fillDensity = 1 / gcodeConfig.stepOver;
                 gcodeConfig.tabHeight -= gcodeConfig.targetDepth;
                 if (gcodeConfig.pathType === 'pocket' || gcodeConfig.pathType === 'fill') {
-                    const cuttingDiameter = vbitPocketDiameter(modelInfo.toolParams, gcodeConfig.targetDepth);
-                    if (cuttingDiameter != null && modelInfo.toolParams) {
+                    const pocketDiameter = vbitPocketDiameter(modelInfo.toolParams, gcodeConfig.targetDepth);
+                    if (pocketDiameter != null && modelInfo.toolParams) {
                         modelInfo.toolParams = {
                             ...modelInfo.toolParams,
-                            toolDiameter: cuttingDiameter,
+                            toolDiameter: pocketDiameter,
                         };
                     }
                 }
@@ -115,7 +167,8 @@ const generateLaserToolPathFromEngine = async (allTasks, onProgress) => {
                 res => {
                     resolve({
                         taskId,
-                        filenames: res.filenames
+                        filenames: res.filenames,
+                        warnings,
                     });
                 },
                 () => {

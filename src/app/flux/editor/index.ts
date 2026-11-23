@@ -85,6 +85,7 @@ import AddMaterialTestGenerate from '../operation-history/AddMaterialTestGenerat
 import askSvgColorImport from '../../ui/pages/laser-main/svgImportPopup';
 import { getModelColorPalette } from '../../toolpaths/utils';
 import i18n from '../../lib/i18n';
+import { isGerberFilename } from '../../../shared/lib/gerber/extensions';
 
 
 declare type HeadType = 'laser' | 'cnc';
@@ -92,7 +93,7 @@ declare type HeadType = 'laser' | 'cnc';
 const getSourceType = fileName => {
     let sourceType;
     const extname = path.extname(fileName).toLowerCase();
-    if (extname === '.svg' || extname === '.dxf') {
+    if (extname === '.svg' || extname === '.dxf' || isGerberFilename(fileName)) {
         sourceType = 'svg';
     } else if (extname === '.stl') {
         sourceType = 'image3d';
@@ -447,6 +448,26 @@ export const actions = {
 
                 const toolPathRenderPromises = [];
 
+                const filenameResults = Array.isArray(toolPathTaskResult.filenames)
+                    ? toolPathTaskResult.filenames
+                    : [];
+                if (headType === HEAD_CNC) {
+                    const seen = new Set();
+                    filenameResults.forEach((entry) => {
+                        const messages = entry && entry.warnings;
+                        if (!Array.isArray(messages)) {
+                            return;
+                        }
+                        messages.forEach((message) => {
+                            if (seen.has(message)) {
+                                return;
+                            }
+                            seen.add(message);
+                            toast(makeSceneToast('warning', message));
+                        });
+                    });
+                }
+
                 toolPathTaskResult.data.forEach((taskResult) => {
                     const toolPath = toolPathGroup._getToolPath(taskResult.taskId);
 
@@ -454,9 +475,6 @@ export const actions = {
                     progressStatesManager.startNextStep();
 
                     if (toolPath) {
-                        const filenameResults = Array.isArray(toolPathTaskResult.filenames)
-                            ? toolPathTaskResult.filenames
-                            : [];
                         taskResult.filenames = filenameResults.find(d => d && d.taskId === taskResult.taskId)?.filenames;
                         // progressStatesManager.startNextStep();
                         const promise = new Promise<boolean>((resolve) => {
@@ -675,7 +693,9 @@ export const actions = {
             );
         };
 
-        const importImage = async ({ sourceWidth, sourceHeight, originalName, uploadName, colorPalette }) => {
+        const importImage = async ({
+            sourceWidth, sourceHeight, originalName, uploadName, colorPalette, warnings, svgNodeName, finestGap
+        }) => {
             let processByColor = false;
             if (
                 headType === HEAD_LASER
@@ -718,33 +738,45 @@ export const actions = {
                     sourceHeight,
                     mode,
                     config: {
-                        svgNodeName: 'image',
-                        ...(colorPalette ? { colorPalette } : {})
+                        svgNodeName: svgNodeName || 'image',
+                        ...(colorPalette ? { colorPalette } : {}),
+                        ...(Number(finestGap) > 0 ? { finestGap: Number(finestGap) } : {})
                     },
                     isLimit
                 })
             );
+            if (headType === HEAD_CNC && Array.isArray(warnings)) {
+                warnings.forEach((message) => {
+                    toast(makeSceneToast('warning', message));
+                });
+            }
         };
 
         if (fileInfo) {
-            const { sourceWidth, sourceHeight, originalName, uploadName, colorPalette } = fileInfo;
+            const { sourceWidth, sourceHeight, originalName, uploadName, colorPalette, warnings, svgNodeName, finestGap } = fileInfo;
             importImage({
                 sourceWidth,
                 sourceHeight,
                 originalName,
                 uploadName,
-                colorPalette
+                colorPalette,
+                warnings,
+                svgNodeName,
+                finestGap
             });
         } else {
             api.uploadImage(formData)
                 .then(async (res) => {
-                    const { sourceWidth, sourceHeight, originalName, uploadName, colorPalette } = res.body;
+                    const { sourceWidth, sourceHeight, originalName, uploadName, colorPalette, warnings, svgNodeName, finestGap } = res.body;
                     await importImage({
                         sourceWidth,
                         sourceHeight,
                         originalName,
                         uploadName,
-                        colorPalette
+                        colorPalette,
+                        warnings,
+                        svgNodeName,
+                        finestGap
                     });
                 })
                 .catch(err => {
@@ -1009,7 +1041,7 @@ export const actions = {
             const extname = path.extname(uploadName);
             const isScale = !includes(scaleExtname, extname);
             const originalExtname = path.extname(originalName).toLowerCase();
-            if (originalExtname !== '.dxf') {
+            if (originalExtname !== '.dxf' && !isGerberFilename(originalName)) {
                 const newModelSize = sourceType !== SOURCE_TYPE.IMAGE3D && sourceType !== SOURCE_TYPE.SVG
                     ? limitModelSizeByMachineSize(coordinateSize, sourceWidth, sourceHeight, isLimit, isScale)
                     : sizeModel(size, materials, sourceWidth, sourceHeight);

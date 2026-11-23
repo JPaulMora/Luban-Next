@@ -4,6 +4,7 @@ import {
     PROCESS_MODE_MESH,
     PROCESS_MODE_VECTOR
 } from '../constants';
+import { isGerberFilename } from '../../shared/lib/gerber/extensions';
 
 // from mm to in
 const mm2in = (val = 0) => val / 25.4;
@@ -30,9 +31,7 @@ const checkIsGCodeFile = (file) => {
 const getUploadModeByFilename = (filename) => {
     const extname = path.extname(filename).toLowerCase();
     let uploadMode;
-    if (extname === '.svg') {
-        uploadMode = PROCESS_MODE_VECTOR;
-    } else if (extname === '.dxf') {
+    if (extname === '.svg' || extname === '.dxf' || isGerberFilename(filename)) {
         uploadMode = PROCESS_MODE_VECTOR;
     } else if (['.stl', '.3mf', '.amf'].includes(extname)) {
         uploadMode = PROCESS_MODE_MESH;

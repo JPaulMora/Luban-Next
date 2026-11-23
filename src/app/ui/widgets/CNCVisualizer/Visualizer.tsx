@@ -24,6 +24,7 @@ import modal from '../../../lib/modal';
 import { humanReadableTime } from '../../../lib/time-utils';
 import UniApi from '../../../lib/uni-api';
 import { getUploadModeByFilename } from '../../../lib/units';
+import { gerberAcceptList, isGerberFilename } from '../../../../shared/lib/gerber/extensions';
 import ModelGroup from '../../../models/ModelGroup';
 import SVGEditor from '../../SVGEditor';
 import { Button } from '../../components/Buttons';
@@ -288,7 +289,7 @@ class Visualizer extends React.Component<VisualizerProps> {
             // Switch to PAGE_EDITOR page if new image being uploaded
             this.props.switchToPage(PAGE_EDITOR);
 
-            if (extname === '.dxf' || extname === '.svg') {
+            if (extname === '.dxf' || extname === '.svg' || isGerberFilename(file.name)) {
                 const fileInfo = await this.props.checkIsOversizeImage(file, () => {
                     modal({
                         cancelTitle: i18n._('key-Laser/Edit/ContextMenu-Close'),
@@ -625,7 +626,7 @@ class Visualizer extends React.Component<VisualizerProps> {
                         onChangeFile={this.actions.onChangeFile}
                         onClickToUpload={this.actions.onClickToUpload}
                         fileInput={this.fileInput}
-                        allowedFiles=".svg, .png, .jpg, .jpeg, .bmp, .dxf, .stl, .amf, .3mf"
+                        allowedFiles={`.svg, .png, .jpg, .jpeg, .bmp, .dxf, .stl, .amf, .3mf, ${gerberAcceptList()}`}
                         headType={HEAD_CNC}
                         showSVGShapeLibrary={this.props.showSVGShapeLibrary}
                     />

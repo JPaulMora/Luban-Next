@@ -9,6 +9,7 @@ import {
     parseDxf,
     generateSvgFromDxf,
 } from '../../../shared/lib/DXFParser/Parser';
+import { importGerber, isGerberFilename } from '../../../shared/lib/gerber';
 import { unzipFile } from '../../lib/archive';
 import stockRemap from '../../lib/stock-remap';
 import { ERR_INTERNAL_SERVER_ERROR } from '../../constants';
@@ -102,6 +103,22 @@ export const set = async (req, res) => {
                 sourceWidth: svg.width,
                 sourceHeight: svg.height,
                 colorPalette: svg.colorPalette,
+            });
+        } else if (isGerberFilename(tempName)) {
+            const text = fs.readFileSync(tempPath, 'utf8');
+            const result = importGerber(text);
+            const svgName = tempName.replace(/\.[^.]+$/, '.gerber.svg');
+            const jsonName = tempName.replace(/\.[^.]+$/, '.copper.json');
+            fs.writeFileSync(`${DataStorage.tmpDir}/${svgName}`, result.svg);
+            fs.writeFileSync(`${DataStorage.tmpDir}/${jsonName}`, JSON.stringify(result.copper));
+            res.send({
+                originalName: originalName,
+                uploadName: svgName,
+                sourceWidth: result.width,
+                sourceHeight: result.height,
+                svgNodeName: 'path',
+                warnings: result.warnings,
+                finestGap: result.finestGap,
             });
         } else if (extname === '.dxf') {
             const result = await parseDxf(tempPath);

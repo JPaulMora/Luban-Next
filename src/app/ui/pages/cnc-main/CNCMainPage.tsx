@@ -45,9 +45,10 @@ import {
     laserCncIntroStepSix,
     laserCncIntroStepTwo,
 } from '../introContent';
+import { gerberAcceptList } from '../../../../shared/lib/gerber/extensions';
 import JobSetupModal from './modals/JobSetupModal';
 
-const ACCEPT = '.svg, .png, .jpg, .jpeg, .bmp, .dxf, .stl, .3mf, .amf';
+const ACCEPT = `.svg, .png, .jpg, .jpeg, .bmp, .dxf, .stl, .3mf, .amf, ${gerberAcceptList()}`;
 const pageHeadType = HEAD_CNC;
 
 function useRenderWarning() {
