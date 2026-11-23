@@ -78,13 +78,18 @@ const polyOffset = (paths, offset, joinType = ClipperLib.JoinType.jtSquare, EndT
     return toResult(solution, type);
 };
 
-const _polyClipper = (cSubPaths, cClipPaths, ClipType = ClipperLib.ClipType.ctUnion) => {
+const _polyClipper = (
+    cSubPaths,
+    cClipPaths,
+    ClipType = ClipperLib.ClipType.ctUnion,
+    fillType = ClipperLib.PolyFillType.pftEvenOdd
+) => {
     const solution = new ClipperLib.Paths();
 
     const clipper = new ClipperLib.Clipper();
     clipper.AddPaths(cSubPaths, ClipperLib.PolyType.ptSubject, true);
     clipper.AddPaths(cClipPaths, ClipperLib.PolyType.ptClip, true);
-    clipper.Execute(ClipType, solution);
+    clipper.Execute(ClipType, solution, fillType, fillType);
 
     return solution;
 };
@@ -105,7 +110,7 @@ const polyUnion = (subPaths, clipPaths) => {
 };
 
 
-const polyDiff = (subPaths, clipPaths) => {
+const polyDiff = (subPaths, clipPaths, fillType = ClipperLib.PolyFillType.pftEvenOdd) => {
     if (!subPaths || !subPaths[0]) {
         return [];
     }
@@ -118,7 +123,7 @@ const polyDiff = (subPaths, clipPaths) => {
     const cSubPaths = preClipperPaths(subPaths, type);
     const cClipPaths = preClipperPaths(clipPaths, type);
 
-    const solution = _polyClipper(cSubPaths, cClipPaths, ClipperLib.ClipType.ctDifference);
+    const solution = _polyClipper(cSubPaths, cClipPaths, ClipperLib.ClipType.ctDifference, fillType);
 
     return toResult(solution, type);
 };
@@ -138,7 +143,7 @@ const polyIntersection = (subPaths, clipPaths) => {
     return toResult(solution, type);
 };
 
-const _recursivePolyUnion = (cPathss) => {
+const _recursivePolyUnion = (cPathss, fillType) => {
     if (cPathss.length === 1) {
         return cPathss[0];
     }
@@ -147,13 +152,13 @@ const _recursivePolyUnion = (cPathss) => {
         if (i + 1 === cPathss.length) {
             nCPathss.push(cPathss[i]);
         } else {
-            nCPathss.push(_polyClipper(cPathss[i], cPathss[i + 1], ClipperLib.ClipType.ctUnion));
+            nCPathss.push(_polyClipper(cPathss[i], cPathss[i + 1], ClipperLib.ClipType.ctUnion, fillType));
         }
     }
-    return _recursivePolyUnion(nCPathss);
+    return _recursivePolyUnion(nCPathss, fillType);
 };
 
-const recursivePolyUnion = (pathss) => {
+const recursivePolyUnion = (pathss, fillType = ClipperLib.PolyFillType.pftEvenOdd) => {
     if (!pathss || pathss.length < 1) {
         return [];
     }
@@ -165,7 +170,7 @@ const recursivePolyUnion = (pathss) => {
 
     const cPathss = pathss.map(v => preClipperPaths(v, type));
 
-    const solution = _recursivePolyUnion(cPathss);
+    const solution = _recursivePolyUnion(cPathss, fillType);
 
     return toResult(solution, type);
 };
