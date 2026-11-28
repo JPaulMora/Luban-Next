@@ -107,6 +107,26 @@
     width: 64px;
 }
 
+// Rows of the Object List while a row is dragged to a new place.
+.object-list-rows {
+    position: relative;
+
+    &.dragging {
+        cursor: grabbing;
+    }
+}
+
+// Where the dragged row will land. Its top is set inline.
+.object-list-drop-line {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    margin-top: -1px;
+    background-color: $blue-1;
+    pointer-events: none;
+}
+
 .object-list-item {
     padding: 4px 0;
 

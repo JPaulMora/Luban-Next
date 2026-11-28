@@ -5,6 +5,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import { Origin } from '../../constants/coordinate';
+import { nextStackedTarget } from '../../lib/object-order';
 import SvgModel from '../../models/SvgModel';
 import Workpiece2d from '../../scene2d/Workpiece2d';
 import SVGSelector from './SVGSelector';
@@ -23,6 +24,8 @@ import SVGContentGroup from './svg-content/SVGContentGroup';
 
 const STEP_COUNT = 10;
 const THRESHOLD_DIST = 0.8;
+// Alt+mouse down and up within this many screen pixels counts as a click.
+const ALT_CLICK_TOLERANCE = 3;
 const ZOOM_RATE = 2.15;
 
 function toDecimal(num, d) {
@@ -67,7 +70,9 @@ const CURRENTDRAWING_INIT = {
         maxX: null,
         maxY: null
     },
-    selectedTarget: null
+    selectedTarget: null,
+    // Set while Alt selects: where it started and what was selected before
+    altPick: null
 };
 
 interface SVGCanvasProps {
@@ -101,6 +106,7 @@ class SVGCanvas extends React.PureComponent<SVGCanvasProps> {
             rotateElementsFinish: PropTypes.func.isRequired,
             isPointInSelectArea: PropTypes.func.isRequired,
             getMouseTargetByCoordinate: PropTypes.func.isRequired,
+            getMouseTargetsByCoordinate: PropTypes.func.isRequired,
             isSelectedAllVisible: PropTypes.func.isRequired
         }).isRequired,
 
@@ -550,11 +556,15 @@ class SVGCanvas extends React.PureComponent<SVGCanvasProps> {
         const x = pt.x;
         const y = pt.y;
         const mouseTarget = this.getMouseTarget(event, x, y);
+        // Alt starts a selection box anywhere, also over an object, and Alt+click
+        // picks the next object down the stack (see onMouseUp).
+        const altSelect = event.altKey && !rightClick && !event.ctrlKey && !event.metaKey
+            && this.mode === 'select' && !this.editingElem;
         if (rightClick || event.ctrlKey || event.metaKey) {
             draw.mode = this.mode;
             // this.setMode('panMove');
             this.mode = 'panMove';
-        } else if (this.svgContentGroup.isElementOperator(mouseTarget)) {
+        } else if (!altSelect && this.svgContentGroup.isElementOperator(mouseTarget)) {
             const grip = event.target;
             const gripType = grip.getAttribute('data-type');
             if (gripType === 'resize') {
@@ -565,7 +575,7 @@ class SVGCanvas extends React.PureComponent<SVGCanvasProps> {
             }
         }
 
-        if (this.isCanMove(mouseTarget, x, y)) {
+        if (!altSelect && this.isCanMove(mouseTarget, x, y)) {
             this.mode = 'move';
         }
         // hide left bar overlay
@@ -577,6 +587,17 @@ class SVGCanvas extends React.PureComponent<SVGCanvasProps> {
                     draw.startX = x;
                     draw.startY = y;
                     this.svgContentGroup.drawGroup.onMouseDown(mouseTarget, x, y);
+                } else if (altSelect) {
+                    draw.selectedTarget = null;
+                    draw.altPick = {
+                        pageX: event.pageX,
+                        pageY: event.pageY,
+                        x,
+                        y,
+                        selected: [...this.svgContentGroup.selectedElements]
+                    };
+                    this.clearSelection();
+                    this.svgSelector.setVisible(true, x, y);
                 } else if (!rightClick) {
                     if (mouseTarget && mouseTarget.parentNode?.id === 'svg-data') {
                         draw.selectedTarget = mouseTarget;
@@ -1167,9 +1188,30 @@ class SVGCanvas extends React.PureComponent<SVGCanvasProps> {
         }
     }, 300);
 
+    // Alt+click: select the next object down the stack under (x, y).
+    public pickNextStacked(x, y, selected) {
+        // A tiny box from mouse moves must not replace the pick afterwards.
+        this.calculateSelectedModel.cancel();
+        const stack = this.props.elementActions.getMouseTargetsByCoordinate(x - this.props.size.x, this.props.size.y - y)
+            .filter(Boolean);
+        const target = nextStackedTarget(stack, selected);
+        this.clearSelection();
+        if (target) {
+            this.addToSelection([target]);
+        }
+    }
+
     public onMouseUp = (event) => {
         if (this.mode === 'select' && event.which === 1 && !this.editingElem) {
             this.svgSelector.setVisible(false);
+            const altPick = this.currentDrawing.altPick;
+            if (altPick) {
+                this.currentDrawing.altPick = null;
+                if (Math.abs(event.pageX - altPick.pageX) < ALT_CLICK_TOLERANCE
+                    && Math.abs(event.pageY - altPick.pageY) < ALT_CLICK_TOLERANCE) {
+                    this.pickNextStacked(altPick.x, altPick.y, altPick.selected);
+                }
+            }
         }
         const draw = this.currentDrawing;
         if (!draw.started) {
