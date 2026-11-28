@@ -5,6 +5,12 @@ Luban Next
 
 ## New features vs Snapmaker Luban
 
+### Gerber isolation
+
+CNC accepts a Gerber copper layer (`.gbr`, `.gtl`, `.gbl`, and the other common copper extensions). The canvas shows the copper. The toolpath is one pass down each clearance, offset by the carving V-bit width at the target depth. If that width is wider than a gap, Luban Next warns before the cut.
+
+Under Target Depth, a Gerber offers the deepest 0.1 mm step that still fits the finest gap on the board. Click the number to use it.
+
 ### Voxel G-code preview
 
 CNC Process Preview can simulate the cut. A 0.1 mm voxel grid stamps the flat, ball, or V-bit along the toolpath, so the preview shows the carved stock. Turn on Simulation to see that solid. The colored lines stay available as the toolpath view.
