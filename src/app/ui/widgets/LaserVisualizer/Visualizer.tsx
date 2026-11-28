@@ -168,6 +168,7 @@ class Visualizer extends React.Component<VisualizerProps> {
             moveElementsOnKeyDown: PropTypes.func.isRequired,
             isPointInSelectArea: PropTypes.func.isRequired,
             getMouseTargetByCoordinate: PropTypes.func.isRequired,
+            getMouseTargetsByCoordinate: PropTypes.func.isRequired,
             isSelectedAllVisible: PropTypes.func.isRequired
         }),
 
@@ -898,6 +899,7 @@ const mapDispatchToProps = (dispatch) => {
             rotateElementsImmediately: (elements, options) => dispatch(editorActions.rotateElementsImmediately('laser', elements, options)),
             isPointInSelectArea: (x, y) => dispatch(editorActions.isPointInSelectArea('laser', x, y)),
             getMouseTargetByCoordinate: (x, y) => dispatch(editorActions.getMouseTargetByCoordinate('laser', x, y)),
+            getMouseTargetsByCoordinate: (x, y) => dispatch(editorActions.getMouseTargetsByCoordinate('laser', x, y)),
             isSelectedAllVisible: () => dispatch(editorActions.isSelectedAllVisible('laser'))
         },
         // onModelTransform: () => dispatch(editorActions.onModelTransform('laser')),
